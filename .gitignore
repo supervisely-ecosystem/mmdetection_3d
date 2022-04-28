@@ -1,0 +1,5 @@
+.vscode
+cache
+data
+serve/secret_debug.env
+serve/src/__pycache__
