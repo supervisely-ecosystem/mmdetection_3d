@@ -2,14 +2,22 @@ import functools
 import os
 import sys
 
+# TODO: wat?
 sys.path.append('')
 import supervisely as sly
+from supervisely.geometry.cuboid_3d import Cuboid3d, Vector3d
+from supervisely.pointcloud_annotation.pointcloud_object_collection import PointcloudObjectCollection
+from supervisely.video_annotation.frame_collection import FrameCollection
+from supervisely.video_annotation.video_tag_collection import VideoTagCollection
 
 import sly_globals as g
 import nn_utils
 import json
 import yaml
 import requests
+import numpy as np
+from collections import OrderedDict
+
 
 def send_error_data(func):
     @functools.wraps(func)
@@ -32,12 +40,13 @@ def get_weights():
     if g.modelWeightsOptions == "pretrained":
         sly.logger.debug(g.pretrained_models_cfg)
         model_data = [x for x in g.pretrained_models_cfg if x["Model"] == g.pretrained_weights][0]
-        g.local_config_path = model_data["config"]
+        g.local_config_path = model_data["config"].strip()
         local_yml_path = os.path.join(os.path.dirname(model_data["config"]), "metafile.yml")
         with open(local_yml_path, "r") as stream:
             model_info = yaml.safe_load(stream)
         for model in model_info["Models"]:
-            if model["Config"] == "/".join(g.local_config_path.split("/")[-3:]):
+            config_relative_path = "/".join(g.local_config_path.split("/")[-3:])
+            if model["Config"] == config_relative_path:
                 g.remote_weights_path = model["Weights"]
         assert g.remote_weights_path is not None
 
@@ -114,15 +123,81 @@ def get_session_info(api: sly.Api, task_id, context, state, app_logger):
     g.my_app.send_response(request_id, data=info)
 
 
-def _inference(api, pointcloud_id, threshold=None):
+def _inference(api, pointcloud_id, threshold=None, selected_classes=None):
     local_pointcloud_path = os.path.join(g.my_app.data_dir, sly.rand_str(15) + ".pcd")
 
     api.pointcloud.download_path(pointcloud_id, local_pointcloud_path)
 
-    results = nn_utils.inference_model(g.model, local_pointcloud_path,
-                                       thresh=threshold if threshold is not None else 0.3)
+    result = nn_utils.inference_model(g.model, local_pointcloud_path,
+                                       thresh=threshold if threshold is not None else 0.3,
+                                       selected_classes=selected_classes)
     sly.fs.silent_remove(local_pointcloud_path)
-    return results
+    return result
+
+
+def turn_around(angle):
+    if angle < 0:
+        return np.pi + angle
+    else:
+        return -np.pi + angle
+
+
+class Annotation:
+    @staticmethod
+    def pred_to_sly_geometry(labels, reverse=False):
+        geometry = []
+        for l in labels:
+            x, y, z = l["translation"][0], l["translation"][1], l["translation"][2]
+            dx, dy, dz = l["size"][0], l["size"][1], l["size"][2]
+            yaw = l["rotation"]
+            position = Vector3d(float(x), float(y), float(z * 0.5))
+
+            if reverse:
+                yaw = turn_around(yaw)
+
+            rotation = Vector3d(0, 0, float(yaw))
+            dimension = Vector3d(float(dx), float(dy), float(dz))
+            g = Cuboid3d(position, rotation, dimension)
+            geometry.append(g)
+        return geometry
+
+
+    @staticmethod
+    def create_annotation(detections, meta, type):
+        objects = []
+        annotations = {"objects": [], "figures": {}}
+        for ptc_id, preds in detections.items():
+            geometry_list = Annotation.pred_to_sly_geometry(preds)
+            figures = []
+            for pred, geometry in zip(preds, geometry_list):  # by object in point cloud
+                pcobj = sly.PointcloudObject(meta.get_obj_class(pred["detection_name"]))
+                objects.append(pcobj)
+                figures.append(sly.PointcloudFigure(pcobj, geometry))
+                # TODO: add tag confidence
+
+            annotations["figures"][ptc_id] = figures
+        
+        annotations["objects"] = PointcloudObjectCollection(objects)
+
+        if type == "point_cloud_episodes":
+            frames = []
+            for frame_ind, (ptc_id, figures) in enumerate(annotations["figures"].items()):
+                frames.append(sly.Frame(frame_ind, figures))
+            anns = sly.PointcloudEpisodeAnnotation(
+                frames_count=len(detections), 
+                objects=annotations["objects"], 
+                frames=FrameCollection(frames), 
+                tags=VideoTagCollection([]))
+            anns = anns.to_json()
+        elif type == "point_clouds":
+            anns = OrderedDict()
+            for ptc_id, figures in annotations["figures"].items():
+                ann = sly.PointcloudAnnotation(
+                    annotations["objects"], 
+                    figures, 
+                    tags=VideoTagCollection([]))
+                anns[ptc_id] = ann.to_json()
+        return anns
 
 
 @g.my_app.callback("inference_pointcloud_id")
@@ -130,26 +205,42 @@ def _inference(api, pointcloud_id, threshold=None):
 @send_error_data
 def inference_pointcloud_id(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
-    results = _inference(api, state["pointcloud_id"], state.get("threshold"))
+    try:
+        raw_result = _inference(api, state["pointcloud_id"], state.get("threshold"), state.get("classes", None))
+    except Exception as e:
+        sly.logger.exception(e)
+
+    ann = Annotation.create_annotation(
+        {state["pointcloud_id"]: raw_result}, 
+        g.meta, 
+        type="point_clouds")
+
+    results = {
+        "annotation": ann[state["pointcloud_id"]], 
+        "raw_results": raw_result
+    }
     request_id = context["request_id"]
-    g.my_app.send_response(request_id, data={"results": results.to_json()})
+    g.my_app.send_response(request_id, data={"results": results})
 
 
 @g.my_app.callback("inference_pointcloud_ids")
 @sly.timeit
 @send_error_data
 def inference_pointcloud_ids(api: sly.Api, task_id, context, state, app_logger):
+    assert state["project_type"] in ["point_cloud_episodes", "point_clouds"]
     app_logger.debug("Input data", extra={"state": state})
-    results = []
+    raw_results = OrderedDict()
     for pointcloud_id in state["pointcloud_ids"]:
         try:
-            result = _inference(api, pointcloud_id, state.get("threshold"))
+            tracking_result = _inference(api, pointcloud_id, state.get("threshold"), state.get("classes", None))
         except Exception as e:
             sly.logger.exception(e)
 
         sly.logger.info(f"Predict {pointcloud_id}")
-        results.append(result.to_json())
+        raw_results[pointcloud_id] = tracking_result
 
+    anns = Annotation.create_annotation(raw_results, g.meta, state["project_type"])
+    results = {"annotation": anns, "raw_results": raw_results}
     request_id = context["request_id"]
     g.my_app.send_response(request_id, data={"results": results})
 
