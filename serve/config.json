@@ -9,26 +9,12 @@
   "description": "Deploy model as REST API service",
   "docker_image": "",
   "main_script": "serve/src/sly_serve.py",
-  "modal_template": "serve/src/modal.html",
-  "modal_width": 700,
-  "modal_template_state": {
-    "modelWeightsOptions": "pretrained",
-    "selectedModel": "CenterPoint",
-    "device": "0",
-    "weightsPath": "",
-    "models": [],
-    "modelColumns": [
-        {"key": "Model", "title": "Model", "subtitle": null},
-        {"key": "Mem (GB)", "title": "Mem (GB)", "subtitle": null}
-    ]
-  },
+  "gui_template": "serve/src/gui.html",
   "task_location": "application_sessions",
   "icon": "https://img.icons8.com/ios-filled/100/000000/3d-scale.png",
   "icon_cover": true,
   "isolate": true,
   "need_gpu": true,
-  "headless": true,
-  "instance_version": "",
   "session_tags": [
     "deployed_nn"
   ]

@@ -1,20 +1,15 @@
 import functools
 import os
-import sys
 
-# TODO: wat?
-sys.path.append('')
+import utils
 import supervisely as sly
 from supervisely.geometry.cuboid_3d import Cuboid3d, Vector3d
 from supervisely.pointcloud_annotation.pointcloud_object_collection import PointcloudObjectCollection
 from supervisely.video_annotation.frame_collection import FrameCollection
 from supervisely.video_annotation.video_tag_collection import VideoTagCollection
+from supervisely.app.v1.widgets.progress_bar import ProgressBar
 
 import sly_globals as g
-import nn_utils
-import json
-import yaml
-import requests
 import numpy as np
 from collections import OrderedDict
 
@@ -33,57 +28,36 @@ def send_error_data(func):
     return wrapper
 
 
-@sly.timeit
-def get_weights():
-    # TODO: check and fix this! 
-    # There is broken code from previous version here.
-    if g.modelWeightsOptions == "pretrained":
-        sly.logger.debug(g.pretrained_models_cfg)
-        model_data = [x for x in g.pretrained_models_cfg if x["Model"] == g.pretrained_weights][0]
-        g.local_config_path = model_data["config"].strip()
-        local_yml_path = os.path.join(os.path.dirname(model_data["config"]), "metafile.yml")
-        with open(local_yml_path, "r") as stream:
-            model_info = yaml.safe_load(stream)
-        for model in model_info["Models"]:
-            config_relative_path = "/".join(g.local_config_path.split("/")[-3:])
-            if model["Config"] == config_relative_path:
-                g.remote_weights_path = model["Weights"]
-        assert g.remote_weights_path is not None
+def init_state_and_data(data, state):
+    state['pretrainedModel'] = 'CenterPoint'
+    data["pretrainedModels"], metrics = utils.get_pretrained_models(return_metrics=True)
+    model_select_info = {}
+    for model_name, params in data["pretrainedModels"].items():
+        if params["group_name"] not in model_select_info.keys():
+            model_select_info[params["group_name"]] = []
+        model_select_info[params["group_name"]].append({
+            "name": model_name,
+            "paper_from": params["paper_from"],
+            "year": params["year"]
+        })
 
-    elif g.modelWeightsOptions == "custom":
-        g.remote_weights_path = g.custom_weights
-        g.remote_config_path = os.path.join(os.path.dirname(os.path.dirname(g.custom_weights)),
-                                            "configs/model_config.py")
-        g.local_config_path = os.path.join(g.my_app.data_dir, "model_config.py")
+    data["pretrainedModelsInfo"] = []
+    for group_name, models in model_select_info.items():
+        group_dict = {"group_name": group_name, "models": models}
+        data["pretrainedModelsInfo"].append(group_dict)
 
-        progress = sly.Progress("Downloading config", 1, is_size=True, need_info_log=True)
-        g.local_weights_path = os.path.join(g.my_app.data_dir, "weights.pt")
+    data["configLinks"] = {model_name: params["config_url"] for model_name, params in data["pretrainedModels"].items()}
 
-        file_info = g.my_app.public_api.file.get_info_by_path(g.team_id, g.remote_config_path)
-        progress.set(current=0, total=file_info.sizeb)
-        g.my_app.public_api.file.download(g.team_id, g.remote_config_path,
-                                          g.local_config_path, g.my_app.cache,
-                                          progress.iters_done_report)
-
-    else:
-        raise ValueError("Unknown weights option {!r}".format(g.modelWeightsOptions))
-
-    # progress = sly.Progress("Downloading weights", 1, is_size=True, need_info_log=True)
-    g.local_weights_path = os.path.join(g.my_app.data_dir, "weights.pt")
-
-    # file_info = g.my_app.public_api.file.get_info_by_path(g.team_id, g.remote_weights_path)
-    # response = requests.head(g.remote_weights_path, allow_redirects=True)
-    # sizeb = int(response.headers.get('content-length', 0))
-    # progress.set(current=0, total=sizeb)
-
-    sly.fs.download(g.remote_weights_path, g.local_weights_path, g.my_app.cache)
-
-    # sly.logger.info(f"Model {g.pretrained_weights} has been "
-    #                 f"successfully downloaded with weights: {g.remote_weights_path} and config {g.remote_config_path}")
-
-    sly.logger.debug(f"Local weights {g.local_weights_path}")
-    sly.logger.debug(f"Local config path {g.local_config_path}")
-    sly.logger.info("Model has been successfully downloaded")
+    data["modelColumns"] = utils.get_table_columns(metrics)
+    state["weightsInitialization"] = "pretrained"
+    state["selectedModel"] = {pretrained_model: data["pretrainedModels"][pretrained_model]["checkpoints"][0]['name']
+                              for pretrained_model in data["pretrainedModels"].keys()}
+    state["device"] = "cuda:0"
+    state["weightsPath"] = ""
+    state["loading"] = False
+    state["deployed"] = False
+    ProgressBar(g.task_id, g.api, "data.progressWeights", "Downloading weights...", is_size=True,
+                                min_report_percent=5).init_data(data)
 
 
 @g.my_app.callback("get_custom_inference_settings")
@@ -128,18 +102,11 @@ def _inference(api, pointcloud_id, threshold=None, selected_classes=None):
 
     api.pointcloud.download_path(pointcloud_id, local_pointcloud_path)
 
-    result = nn_utils.inference_model(g.model, local_pointcloud_path,
+    result = utils.inference_model(g.model, local_pointcloud_path,
                                        thresh=threshold if threshold is not None else 0.3,
                                        selected_classes=selected_classes)
     sly.fs.silent_remove(local_pointcloud_path)
     return result
-
-
-def turn_around(angle):
-    if angle < 0:
-        return np.pi + angle
-    else:
-        return -np.pi + angle
 
 
 class Annotation:
@@ -151,10 +118,6 @@ class Annotation:
             dx, dy, dz = l["size"][0], l["size"][1], l["size"][2]
             yaw = l["rotation"]
             position = Vector3d(float(x), float(y), float(z * 0.5))
-
-            if reverse:
-                yaw = turn_around(yaw)
-
             rotation = Vector3d(0, 0, float(yaw))
             dimension = Vector3d(float(dx), float(dy), float(dz))
             g = Cuboid3d(position, rotation, dimension)
@@ -245,6 +208,21 @@ def inference_pointcloud_ids(api: sly.Api, task_id, context, state, app_logger):
     g.my_app.send_response(request_id, data={"results": results})
 
 
+@g.my_app.callback("run")
+@g.my_app.ignore_errors_and_show_dialog_window()
+def init_model(api: sly.Api, task_id, context, state, app_logger):
+    g.remote_weights_path = state["weightsPath"]
+    g.device = state["device"]
+    utils.download_weights(state)
+    utils.init_model_and_cfg()
+    fields = [
+        {"field": "state.loadingModel", "payload": False},
+        {"field": "state.deployed", "payload": True},
+    ]
+    g.api.app.set_fields(g.task_id, fields)
+    sly.logger.info("Model has been successfully deployed.")
+
+
 def main():
     # TODO: mmdet3d version from master now. It is unstable.
     sly.logger.info("Script arguments", extra={
@@ -256,11 +234,13 @@ def main():
         "pretrained_weights": g.pretrained_weights
     })
 
-    get_weights()
+    data = {}
+    state = {}
 
-    nn_utils.construct_model_meta()
-    nn_utils.deploy_model()
-    g.my_app.run()
+    init_state_and_data(data, state)
+
+    g.my_app.compile_template(g.root_source_path)
+    g.my_app.run(data=data, state=state)
 
 
 if __name__ == "__main__":

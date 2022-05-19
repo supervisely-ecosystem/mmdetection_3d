@@ -29,18 +29,12 @@ sly.fs.clean_dir(my_app.data_dir)
 team_id = int(os.environ['context.teamId'])
 workspace_id = int(os.environ['context.workspaceId'])
 
-modelWeightsOptions = os.environ['modal.state.modelWeightsOptions']
-pretrained_weights = os.environ['modal.state.selectedModel']
-custom_weights = os.environ['modal.state.weightsPath']
-models = os.environ['modal.state.models']
-# TODO: debug version
-pretrained_models_cfg = json.loads(models)
 remote_weights_path = None
-
-device = int(os.environ['modal.state.device'])
-
+device = None
 model = None
 meta: sly.ProjectMeta = None
+local_weights_path = None
+model_config_local_path = None
 
 # Temporary solution. 
 # TODO: It is needed to implement like in other MMtoolbox-apps in supervisely 
