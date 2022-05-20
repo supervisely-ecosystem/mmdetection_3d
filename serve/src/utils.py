@@ -9,6 +9,7 @@ import numpy as np
 import pathlib
 import open3d as o3d
 from mmcv import Config
+from mmcv.cnn.utils import revert_sync_batchnorm
 from mmdet3d.apis import inference_detector, init_model
 from supervisely.geometry.cuboid_3d import Cuboid3d
 from supervisely.app.v1.widgets.progress_bar import ProgressBar
@@ -103,7 +104,7 @@ def download_custom_config(state):
 
 
 def download_weights(state):
-    progress = ProgressBar(g.task_id, g.api, "data.progressWeights", "Downloading weights...", is_size=True,
+    progress = ProgressBar(g.task_id, g.api, "data.progressWeights", "Downloading weights", is_size=True,
                                            min_report_percent=5)
     if state["weightsInitialization"] == "custom":
         weights_path_remote = state["weightsPath"]
@@ -139,11 +140,11 @@ def download_weights(state):
                             extra={"weights": g.local_weights_path})
 
 
-def init_model_and_cfg():
+def init_model_and_cfg(state):
     cfg = Config.fromfile(g.model_config_local_path)
     # print(cfg.pretty_text) # TODO: for debug
     labels = cfg['class_names']
-
+    g.model_name = state["pretrainedModel"]
     g.gt_index_to_labels = dict(enumerate(labels))
     g.gt_labels = {v: k for k, v in g.gt_index_to_labels.items()}
     obj_classes = sly.ObjClassCollection([sly.ObjClass(k, Cuboid3d) for k in labels])
@@ -153,7 +154,9 @@ def init_model_and_cfg():
         cfg.model.pts_voxel_encoder.in_channels = 3
 
     try:
-        g.model = init_model(cfg, g.local_weights_path)
+        g.model = init_model(cfg, g.local_weights_path, state["device"])
+
+        g.model = revert_sync_batchnorm(g.model)
     except FileNotFoundError:
         raise ValueError(f"File not exists: {g.local_weights_path}!")
     except Exception as e:

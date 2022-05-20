@@ -56,7 +56,7 @@ def init_state_and_data(data, state):
     state["weightsPath"] = ""
     state["loading"] = False
     state["deployed"] = False
-    ProgressBar(g.task_id, g.api, "data.progressWeights", "Downloading weights...", is_size=True,
+    ProgressBar(g.task_id, g.api, "data.progressWeights", "Downloading weights", is_size=True,
                                 min_report_percent=5).init_data(data)
 
 
@@ -88,7 +88,7 @@ def get_output_classes_and_tags(api: sly.Api, task_id, context, state, app_logge
 def get_session_info(api: sly.Api, task_id, context, state, app_logger):
     info = {
         "app": "Serve MMDetection3D",
-        "weights": g.remote_weights_path,
+        "model_name": g.model_name,
         "device": g.device,
         "session_id": task_id,
         "classes_count": len(g.meta.obj_classes),
@@ -214,7 +214,7 @@ def init_model(api: sly.Api, task_id, context, state, app_logger):
     g.remote_weights_path = state["weightsPath"]
     g.device = state["device"]
     utils.download_weights(state)
-    utils.init_model_and_cfg()
+    utils.init_model_and_cfg(state)
     fields = [
         {"field": "state.loadingModel", "payload": False},
         {"field": "state.deployed", "payload": True},
@@ -227,11 +227,7 @@ def main():
     # TODO: mmdet3d version from master now. It is unstable.
     sly.logger.info("Script arguments", extra={
         "context.teamId": g.team_id,
-        "context.workspaceId": g.workspace_id,
-        "device": g.device,
-        "modelWeightsOptions": g.modelWeightsOptions,
-        "custom_weights": g.custom_weights,
-        "pretrained_weights": g.pretrained_weights
+        "context.workspaceId": g.workspace_id
     })
 
     data = {}

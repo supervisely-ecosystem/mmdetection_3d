@@ -35,6 +35,7 @@ model = None
 meta: sly.ProjectMeta = None
 local_weights_path = None
 model_config_local_path = None
+model_name = None
 
 # Temporary solution. 
 # TODO: It is needed to implement like in other MMtoolbox-apps in supervisely 
