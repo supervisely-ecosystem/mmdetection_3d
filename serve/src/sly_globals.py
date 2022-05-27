@@ -33,7 +33,7 @@ modelWeightsOptions = os.environ['modal.state.modelWeightsOptions']
 pretrained_weights = os.environ['modal.state.selectedModel']
 custom_weights = os.environ['modal.state.weightsPath']
 models = os.environ['modal.state.models']
-# TODO: debug version
+
 pretrained_models_cfg = json.loads(models)
 remote_weights_path = None
 

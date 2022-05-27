@@ -3,23 +3,76 @@
   "type": "app",
   "categories": [
     "neural network",
-    "pointcloud",
+    "pointclouds",
+    "pointcloud episodes",
     "3D object detection"
   ],
   "description": "Deploy model as REST API service",
-  "docker_image": "",
+  "docker_image": "supervisely/mmdet3d:1.0.0",
   "main_script": "serve/src/sly_serve.py",
   "modal_template": "serve/src/modal.html",
   "modal_width": 700,
   "modal_template_state": {
     "modelWeightsOptions": "pretrained",
-    "selectedModel": "CenterPoint",
-    "device": "0",
+    "selectedModel": "CenterPoint (01voxel)",
     "weightsPath": "",
-    "models": [],
+    "device": "0",
+    "models": [
+      {
+        "config": "/tmp/mmdet3d/configs/centerpoint/centerpoint_01voxel_second_secfpn_circlenms_4x8_cyclic_20e_nus.py",
+        "Model": "CenterPoint (01voxel)",
+        "Mem (GB)": "4.9",
+        "Dataset": "nuScenes",
+        "mAP score": "56.19",
+        "NDS score": "64.43"
+      },
+      {
+        "config": "/tmp/mmdet3d/configs/centerpoint/centerpoint_01voxel_second_secfpn_dcn_circlenms_4x8_cyclic_20e_nus.py",
+        "Model": "CenterPoint (01voxel + DCN)",
+        "Mem (GB)": "5.2",
+        "Dataset": "nuScenes",
+        "mAP score": "56.34",
+        "NDS score": "64.81"
+      },
+      {
+        "config": "/tmp/mmdet3d/configs/centerpoint/centerpoint_0075voxel_second_secfpn_circlenms_4x8_cyclic_20e_nus.py",
+        "Model": "CenterPoint (0075voxel)",
+        "Mem (GB)": "7.8",
+        "Dataset": "nuScenes",
+        "mAP score": "57.34",
+        "NDS score": "65.23"
+      },
+      {
+        "config": "/tmp/mmdet3d/configs/centerpoint/centerpoint_0075voxel_second_secfpn_dcn_circlenms_4x8_cyclic_20e_nus.py",
+        "Model": "CenterPoint (0075voxel + DCN)",
+        "Mem (GB)": "8.5",
+        "Dataset": "nuScenes",
+        "mAP score": "57.27",
+        "NDS score": "65.58"
+      },
+      {
+        "config": "/tmp/mmdet3d/configs/centerpoint/centerpoint_02pillar_second_secfpn_circlenms_4x8_cyclic_20e_nus.py",
+        "Model": "CenterPoint (02pillar)",
+        "Mem (GB)": "4.4",
+        "Dataset": "nuScenes",
+        "mAP score": "49.07",
+        "NDS score": "59.66"
+      },
+      {
+        "config": "/tmp/mmdet3d/configs/centerpoint/centerpoint_02pillar_second_secfpn_dcn_4x8_cyclic_20e_nus.py",
+        "Model": "CenterPoint (02pillar + DCN)",
+        "Mem (GB)": "4.6",
+        "Dataset": "nuScenes",
+        "mAP score": "48.8",
+        "NDS score": "59.67"
+      }
+    ],
     "modelColumns": [
         {"key": "Model", "title": "Model", "subtitle": null},
-        {"key": "Mem (GB)", "title": "Mem (GB)", "subtitle": null}
+        {"key": "Mem (GB)", "title": "Mem (GB)", "subtitle": null},
+        {"key": "Dataset", "title": "Dataset", "subtitle": null},
+        {"key": "mAP score", "title": "mAP score", "subtitle": null},
+        {"key": "NDS score", "title": "NDS score", "subtitle": null}
     ]
   },
   "task_location": "application_sessions",
@@ -28,7 +81,6 @@
   "isolate": true,
   "need_gpu": true,
   "headless": true,
-  "instance_version": "",
   "session_tags": [
     "deployed_nn"
   ]
