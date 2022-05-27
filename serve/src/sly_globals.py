@@ -32,8 +32,12 @@ workspace_id = int(os.environ['context.workspaceId'])
 modelWeightsOptions = os.environ['modal.state.modelWeightsOptions']
 pretrained_weights = os.environ['modal.state.selectedModel']
 custom_weights = os.environ['modal.state.weightsPath']
-models = os.environ['modal.state.models']
-pretrained_models_cfg = models
+# models = os.environ['modal.state.models']
+
+with open(f"/sessions/{task_id}/repo/supervisely/serve/config.json") as f:
+    pretrained_models_cfg = json.load(f)['modal_template_state']['models']
+
+#pretrained_models_cfg = models
 #pretrained_models_cfg = json.loads(models) # TODO: debug ver
 remote_weights_path = None
 
