@@ -38,7 +38,7 @@ def get_weights():
     # TODO: check and fix this! 
     # There is broken code from previous version here.
     if g.modelWeightsOptions == "pretrained":
-        sly.logger.debug(g.pretrained_models_cfg)
+        sly.logger.info(g.pretrained_models_cfg)
         model_data = [x for x in g.pretrained_models_cfg if x["Model"] == g.pretrained_weights][0]
         g.local_config_path = model_data["config"].strip()
         local_yml_path = os.path.join(os.path.dirname(model_data["config"]), "metafile.yml")
