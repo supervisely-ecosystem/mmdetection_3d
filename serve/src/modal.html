@@ -64,7 +64,7 @@
                 </table>
             </el-tab-pane>
             <el-tab-pane name="custom">
-                <el-radio slot="label" v-model="state.modelWeightsOptions" label="custom">
+                <el-radio slot="label" :disabled="true" v-model="state.modelWeightsOptions" label="custom">
                     Custom
                 </el-radio>
                 <sly-field title="Weights path" description="Copy path in Team Files">
