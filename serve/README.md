@@ -50,7 +50,7 @@ Application key points:
 
 **Pretrained models**
 
-**Step 1.** Select model
+**Step 1.** Select architecture and pretrained model
 
 **Step 2.** Press the **Serve** button
 
