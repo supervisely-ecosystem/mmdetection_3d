@@ -11,7 +11,7 @@
   "main_script": "serve/src/sly_serve.py",
   "gui_template": "serve/src/gui.html",
   "task_location": "application_sessions",
-  "icon": "https://img.icons8.com/ios-filled/100/000000/3d-scale.png",
+  "icon": "https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v0.0.1/serve-icon.png",
   "icon_cover": true,
   "isolate": true,
   "need_gpu": true,
