@@ -29,7 +29,7 @@ Serve MMDetection3D model as Supervisely Application. MMDetection3D is an open s
 
 Application key points:
 - All 3D Detection models from MM Toolbox are available
-- Deployed on GPU (GTX only)
+- Deployed on GPU (NVidia RTX devices support coming soon)
 
 
 # How to Run
@@ -62,10 +62,10 @@ Application key points:
 
 **Custom models**
 
-Support for custom models will be added in the future version of the app. 
+Support for custom models will be added in the next version of the app. 
 
 
-# Common apps
+# Related apps
 
 You can use served model in next Supervisely Applications ⬇️ 
   
@@ -74,7 +74,7 @@ You can use served model in next Supervisely Applications ⬇️
    
     <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/nn-image-labeling/project-dataset" src="https://github.com/supervisely-ecosystem/apply-det3d-to-project-dataset/releases/download/v0.0.1/thumb.png" width="550px"/> 
     
-# Demo
+# Demo video
 
 <a data-key="sly-embeded-video-link" href="https://youtu.be/wh5bwPWSvXw" data-video-code="wh5bwPWSvXw"> <img src="https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v0.0.1/serve-youtube-image.png" alt="SLY_EMBEDED_VIDEO_LINK"  width="500"> </a>  
 
