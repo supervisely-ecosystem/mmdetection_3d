@@ -17,5 +17,6 @@
   "need_gpu": true,
   "session_tags": [
     "deployed_nn"
-  ]
+  ],
+  "poster": "https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v0.0.1/serve-poster.png"
 }
