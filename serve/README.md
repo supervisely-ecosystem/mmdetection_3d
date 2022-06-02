@@ -36,7 +36,7 @@ Application key points:
 
 **Step 1.** Add [Serve MMDetection3D](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/mmdetection_3d/serve) to your team
 
-<img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/mmdetection/serve" src="https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v0.0.1/serve-thumb.png" width="350px" style='padding-bottom: 10px'/>
+<img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/mmdetection_3d/serve" src="https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v0.0.1/serve-thumb.png" width="350px" style='padding-bottom: 10px'/>
 
 **Step 2.** Run the application from Plugins & Apps page
 
