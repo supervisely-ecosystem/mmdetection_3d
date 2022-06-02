@@ -9,6 +9,7 @@
   <a href="#How-To-Run">How To Run</a> •
   <a href="#How-To-Use">How To Use</a> •
   <a href="#Common-apps">Common Apps</a> •
+  <a href="#Demo">Demo</a> •
   <a href="#Acknowledgment">Acknowledgment</a>
 </p>
 
