@@ -61,9 +61,7 @@ Application key points:
 
 **Custom models**
 
-Model and directory structure must be acquired via [Train MMDetection](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/mmdetection/train) app or manually created with the same directory structure
-
-<img src="https://github.com/supervisely-ecosystem/mmdetection/releases/download/v0.0.1/copy-path-min.gif"/>  
+Support for custom models will be added in the future version of the app. 
 
 
 # Common apps
@@ -74,6 +72,10 @@ You can use served model in next Supervisely Applications ⬇️
 - [Apply 3D Detection to Pointcloud Project](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/apply-det3d-to-project-dataset)   
    
     <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/nn-image-labeling/project-dataset" src="https://github.com/supervisely-ecosystem/apply-det3d-to-project-dataset/releases/download/v0.0.1/thumb.png" width="550px"/> 
+    
+# Demo
+
+<a data-key="sly-embeded-video-link" href="https://youtu.be/wh5bwPWSvXw" data-video-code="wh5bwPWSvXw"> <img src="https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v0.0.1/serve-youtube-image.png" alt="SLY_EMBEDED_VIDEO_LINK"  width="500"> </a>  
 
 
 # Acknowledgment
