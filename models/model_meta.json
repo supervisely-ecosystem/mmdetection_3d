@@ -9,28 +9,16 @@
                 "year": 2021
             },
             {
-                "model_name" : "SSN",
-                "yml_file" : "ssn/metafile.yml",
-                "paper_from": "ECCV",
-                "year": 2020
-            },
-            {
-                "model_name" : "Part-A2",
-                "yml_file" : "parta2/metafile.yml",
-                "paper_from": "TPAMI",
-                "year": 2020
-            },
-            {
                 "model_name" : "3DSSD",
                 "yml_file" : "3dssd/metafile.yml",
                 "paper_from": "CVPR",
                 "year": 2020
             },
             {
-                "model_name" : "PointRCNN",
-                "yml_file" : "point_rcnn/metafile.yml",
-                "paper_from": "CVPR",
-                "year": 2019
+                "model_name" : "SSN",
+                "yml_file" : "ssn/metafile.yml",
+                "paper_from": "ECCV",
+                "year": 2020
             },
             {
                 "model_name" : "PointPillars",
@@ -54,12 +42,6 @@
                 "yml_file" : "groupfree3d/metafile.yml",
                 "paper_from": "ICCV",
                 "year": 2021
-            },
-            {
-                "model_name" : "H3DNet",
-                "yml_file" : "h3dnet/metafile.yml",
-                "paper_from": "ECCV",
-                "year": 2020
             },
             {
                 "model_name" : "VoteNet",
