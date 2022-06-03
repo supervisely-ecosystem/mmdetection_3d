@@ -8,7 +8,7 @@
   <a href="#Overview">Overview</a> •
   <a href="#How-To-Run">How To Run</a> •
   <a href="#How-To-Use">How To Use</a> •
-  <a href="#Common-apps">Common Apps</a> •
+  <a href="#Related-Apps">Related Apps</a> •
   <a href="#Demo">Demo</a> •
   <a href="#Acknowledgment">Acknowledgment</a>
 </p>
@@ -69,12 +69,23 @@ Support for custom models will be added in the next version of the app.
 # Related apps
 
 You can use served model in next Supervisely Applications ⬇️ 
-  
-  
+   
 - [Apply 3D Detection to Pointcloud Project](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/apply-det3d-to-project-dataset)   
    
     <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/apply-det3d-to-project-dataset" src="https://github.com/supervisely-ecosystem/apply-det3d-to-project-dataset/releases/download/v0.0.1/thumb.png" width="550px"/> 
-    
+
+You can try this app on our prepared demo projects with pointcloud episodes ⬇️ 
+  
+- [Demo pointcloud episodes](https://ecosystem.supervise.ly/projects/demo-poinctloud-episodes)
+
+    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/demo-poinctloud-episodes" src="https://user-images.githubusercontent.com/48913536/171821238-035ac627-a794-4bd6-8ea2-9392b29adba9.png" width="170px"/>
+
+
+- [Demo pointcloud episodes with labels](https://ecosystem.supervise.ly/projects/demo-poinctloud-episodes-annotated)
+
+    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/demo-poinctloud-episodes-annotated" src="https://user-images.githubusercontent.com/48913536/171821464-6e89dc48-c60e-424e-b734-998251911a1e.png" width="350px"/>
+
+
 # Demo video
 
 <a data-key="sly-embeded-video-link" href="https://youtu.be/wh5bwPWSvXw" data-video-code="wh5bwPWSvXw"> <img src="https://user-images.githubusercontent.com/48913536/171728077-4905ba22-a0fc-43df-8026-0b8d3e9f53dc.png" alt="SLY_EMBEDED_VIDEO_LINK"  width="500"> </a>  
