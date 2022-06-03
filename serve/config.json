@@ -11,11 +11,12 @@
   "main_script": "serve/src/sly_serve.py",
   "gui_template": "serve/src/gui.html",
   "task_location": "application_sessions",
-  "icon": "https://img.icons8.com/ios-filled/100/000000/3d-scale.png",
+  "icon": "https://user-images.githubusercontent.com/12828725/171726755-470c663f-9c66-40b1-ab9d-b066aaf1ac2b.png",
   "icon_cover": true,
   "isolate": true,
   "need_gpu": true,
   "session_tags": [
-    "deployed_nn"
-  ]
+    "deployed_nn_3d"
+  ],
+  "poster": "https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v0.0.1/serve-poster.png"
 }
