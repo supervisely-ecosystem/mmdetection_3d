@@ -30,6 +30,7 @@ Serve MMDetection3D model as Supervisely Application. MMDetection3D is an open s
 Application key points:
 - All 3D Detection models from MM Toolbox are available
 - Deployed on GPU (NVidia RTX devices support coming soon)
+- Models are available only for outdoor and indoor 3d object detection. Other scenarious coming soon (monocular 3D Object Detection, multi-modal 3D Object Detection, 3D Semantic Segmentation)
 
 
 # How to Run
