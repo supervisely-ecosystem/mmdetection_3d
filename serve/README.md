@@ -78,7 +78,7 @@ You can try this app on our prepared demo projects with pointcloud episodes â¬‡ï
   
 - [Demo pointcloud episodes](https://ecosystem.supervise.ly/projects/demo-poinctloud-episodes)
 
-    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/demo-poinctloud-episodes" src="https://user-images.githubusercontent.com/48913536/171821238-035ac627-a794-4bd6-8ea2-9392b29adba9.png" width="170px"/>
+    <img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/demo-poinctloud-episodes" src="https://user-images.githubusercontent.com/48913536/171821238-035ac627-a794-4bd6-8ea2-9392b29adba9.png" width="350px"/>
 
 
 - [Demo pointcloud episodes with labels](https://ecosystem.supervise.ly/projects/demo-poinctloud-episodes-annotated)
