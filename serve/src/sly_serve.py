@@ -13,6 +13,8 @@ import sly_globals as g
 import numpy as np
 from collections import OrderedDict
 
+import parta2
+
 
 def send_error_data(func):
     @functools.wraps(func)

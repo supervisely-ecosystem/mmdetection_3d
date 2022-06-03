@@ -9,7 +9,6 @@ import numpy as np
 import pathlib
 import open3d as o3d
 from mmcv import Config
-from mmcv.cnn.utils import revert_sync_batchnorm
 from mmdet3d.apis import inference_detector, init_model
 from supervisely.geometry.cuboid_3d import Cuboid3d
 from supervisely.app.v1.widgets.progress_bar import ProgressBar
@@ -153,10 +152,16 @@ def init_model_and_cfg(state):
     if hasattr(cfg.model, "pts_voxel_encoder") and hasattr(cfg.model.pts_voxel_encoder, "in_channels"):
         cfg.model.pts_voxel_encoder.in_channels = 3
 
-    try:
-        g.model = init_model(cfg, g.local_weights_path, state["device"])
+    if hasattr(cfg.model, "voxel_encoder") and hasattr(cfg.model.voxel_encoder, "in_channels"):
+        cfg.model.voxel_encoder.in_channels = 3
 
-        g.model = revert_sync_batchnorm(g.model)
+    # TODO: don't works
+    if g.model_name == "Part-A2":
+        cfg.model.type = "PartA2Fixed"
+        cfg.model.voxel_layer.max_voxels=(800, 800)
+
+    try:
+        g.model = init_model(cfg, g.local_weights_path, state["device"]) 
     except FileNotFoundError:
         raise ValueError(f"File not exists: {g.local_weights_path}!")
     except Exception as e:
@@ -198,19 +203,25 @@ def inference_model(model, local_pointcloud_path, thresh=0.3, selected_classes=N
     # TODO: use plyfile.PlyData instead of o3d if it is possible
     pcd = o3d.io.read_point_cloud(local_pointcloud_path)
     pcd_np = np.asarray(pcd.points)
-    pcd_np.astype(np.float32).tofile(local_pointcloud_path)
     point_dims = 3
+    if g.model_name in ["3DSSD", "PointRCNN"]:
+        intensity = np.ones((pcd_np.shape[0], 1)).astype(np.float32) * 0.5
+        intensity += np.random.normal(0, 0.1, size=intensity.shape)
+        pcd_np = np.hstack((pcd_np, intensity))
+        point_dims = 4
+    pcd_np.astype(np.float32).tofile(local_pointcloud_path)
+    
 
     model.cfg.data.test.box_type_3d = 'lidar'
     # TODO: I'm not sure that it is good to change this default parameter
-    model.cfg.point_cloud_range = [
-        pcd_np[:,0].min(), 
-        pcd_np[:,1].min(), 
-        pcd_np[:,2].min(), 
-        pcd_np[:,0].max(), 
-        pcd_np[:,1].max(), 
-        pcd_np[:,2].max()
-    ]
+    # model.cfg.point_cloud_range = [
+    #     pcd_np[:,0].min(), 
+    #     pcd_np[:,1].min(), 
+    #     pcd_np[:,2].min(), 
+    #     pcd_np[:,0].max(), 
+    #     pcd_np[:,1].max(), 
+    #     pcd_np[:,2].max()
+    # ]
 
     model.cfg.data.test.pipeline[0].load_dim = point_dims
     model.cfg.data.test.pipeline[0].use_dim = point_dims
