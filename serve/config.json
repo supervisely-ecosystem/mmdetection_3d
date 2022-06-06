@@ -3,8 +3,9 @@
   "type": "app",
   "categories": [
     "neural network",
-    "pointcloud",
-    "3D object detection"
+    "pointclouds",
+    "detection & tracking",
+    "serve"
   ],
   "description": "Deploy model as REST API service",
   "docker_image": "supervisely/mmdet3d:1.0.0",
