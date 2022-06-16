@@ -37,6 +37,10 @@ def get_pretrained_models(return_metrics=False):
                 checkpoint_keys = []
                 for model in model_info["Models"]:
                     checkpoint_info = {}
+                    if "exclude" in model_meta.keys():
+                        if model_meta["exclude"].endswith("*"):
+                            if model["Name"].startswith(model_meta["exclude"][:-1]):
+                                continue
                     checkpoint_info["name"] = model["Name"]
                     checkpoint_info["method"] = model["In Collection"]
                     try:

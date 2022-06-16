@@ -6,7 +6,9 @@
                 "model_name" : "CenterPoint",
                 "yml_file" : "centerpoint/metafile.yml",
                 "paper_from": "CVPR",
-                "year": 2021
+                "year": 2021,
+                "exclude": "centerpoint_02pillar_second_secfpn_circlenms*"
+
             },
             {
                 "model_name" : "3DSSD",
