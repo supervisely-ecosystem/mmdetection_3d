@@ -19,5 +19,6 @@
   "session_tags": [
     "deployed_nn_3d"
   ],
-  "poster": "https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v0.0.1/serve-poster.png"
+  "poster": "https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v0.0.1/serve-poster.png",
+  "community_agent": false
 }
