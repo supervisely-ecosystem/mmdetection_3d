@@ -1,5 +1,6 @@
 .vscode
 cache
 data
-serve/secret_debug.env
-serve/src/__pycache__
+*secret_debug.env
+*__pycache__
+*.pyc

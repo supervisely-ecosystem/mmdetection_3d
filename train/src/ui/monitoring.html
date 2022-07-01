@@ -1,0 +1,15 @@
+<sly-card title="Training progress"
+          subtitle="Task progress, detailed logs, metrics charts, and other visualizations"
+          :options="{collapsable: true}"
+          :collapsed.sync="state.collapsedMonitoring"
+          :disabled="{disabled: state.disabledMonitoring, message: 'Finish all previous steps before training the model.'}"
+          ref="step7"
+>
+    <el-button v-if="!state.doneMonitoring"
+               type="primary" class="regular"
+               @click="state.started = true; command('train');"
+               :loading="state.started"
+    >
+        <i class="zmdi zmdi-play mr5"></i> Train
+    </el-button>
+</sly-card>
