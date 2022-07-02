@@ -24,7 +24,7 @@ mp_start_method = 'fork'
 
 # If point cloud range is changed, the models should also change their point
 # cloud range accordingly
-point_cloud_range = [0, -40, -3, 70.4, 40, 1]
+point_cloud_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
 
 # For nuScenes we usually do 10-class detection
 class_names = [
@@ -129,8 +129,8 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=4,
-    workers_per_gpu=4,
+    samples_per_gpu=1,
+    workers_per_gpu=1,
     train=dict(
         type=dataset_type,
         data_root=data_root,
@@ -176,7 +176,7 @@ lr = 0.0018
 # The optimizer follows the setting in SECOND.Pytorch, but here we use
 # the offcial AdamW optimizer implemented by PyTorch.
 optimizer = dict(type='AdamW', lr=lr, betas=(0.95, 0.99), weight_decay=0.01)
-optimizer_config = dict(grad_clip=dict(max_norm=10, norm_type=2))
+optimizer_config = dict(grad_clip=dict(max_norm=1, norm_type=2), detect_anomalous_params=True)
 # We use cyclic learning rate and momentum schedule following SECOND.Pytorch
 # https://github.com/traveller59/second.pytorch/blob/3aba19c9688274f75ebb5e576f65cfe54773c021/torchplus/train/learning_schedules_fastai.py#L69  # noqa
 # We implement them in mmcv, for more details, please refer to
@@ -194,7 +194,6 @@ momentum_config = dict(
     cyclic_times=1,
     step_ratio_up=0.4,
 )
-# Although the max_epochs is 40, this schedule is usually used we
 
 
 voxel_size = [0.05, 0.05, 0.1]

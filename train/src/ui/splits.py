@@ -174,17 +174,16 @@ def create_splits(api: sly.Api, task_id, context, state, app_logger):
     global train_set, val_set
     try:
         api.task.set_field(task_id, "state.splitInProgress", True)
-        if state["splitMethod"] == "tags":
-            train_set, val_set = get_train_val_sets(state)
-        else:
-            train_set, val_set = get_train_val_sets(state)
+        train_set, val_set = get_train_val_sets(state)
         verify_train_val_sets(train_set, val_set)
         
         if train_set is not None:
             sly.logger.info("Converting train annotations to mmdet3d format...")
+            # if not osp.exists(train_set_path): # TODO: for debug
             save_set_to_annotation(train_set_path, train_set, state["selectedClasses"], "Train")
         if val_set is not None:
             sly.logger.info("Converting val annotations to mmdet3d format...")
+            # if not osp.exists(val_set_path): # TODO: for debug
             save_set_to_annotation(val_set_path, val_set, state["selectedClasses"], "Val")
         step_done = True
     except Exception as e:
@@ -276,7 +275,7 @@ def save_set_to_annotation(save_path, items, selected_classes, split_name):
                 dim = fig.geometry.dimensions
                 box_info.extend([dim.x, dim.y, dim.z])
                 box_info.extend([fig.geometry.rotation.z])
-                # box_info.extend([vel_x, vel_y]) # TODO: add vel
+                # box_info.extend([0, 0]) # TODO: add vel
                 ptc_info['annos']['gt_bboxes_3d'].append(box_info)
                 ptc_info['annos']['gt_labels_3d'].append(selected_classes.index(fig.video_object.obj_class.name))
         ptc_info['annos']['gt_bboxes_3d'] = np.array(ptc_info['annos']['gt_bboxes_3d'], dtype=np.float32)
