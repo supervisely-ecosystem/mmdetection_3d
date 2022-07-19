@@ -10,6 +10,7 @@ RUN pip3 install -e /tmp/mmdet3d/mmdetection3d
 RUN pip3 install mmdet==2.23.0
 RUN pip3 install mmsegmentation==0.23.0
 RUN pip3 install pyyaml==6.0
+RUN pip3 install open3d==0.13.0
 # It is possible that not all necessary packages specified here
 
 #RUN mkdir -p /tmp/mmdet3d \
