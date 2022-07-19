@@ -7,7 +7,7 @@ RUN pip3 install mmcv-full==1.5.0 -f https://download.openmmlab.com/mmcv/dist/cu
 # TODO: use pip3 install mmdet3d==1.0.0 when it will be released
 RUN git clone https://github.com/open-mmlab/mmdetection3d.git /tmp/mmdet3d/mmdetection3d
 RUN pip3 install -e /tmp/mmdet3d/mmdetection3d
-RUN pip3 install mmdet==2.23.0
+RUN pip3 install mmdet==2.24.0
 RUN pip3 install mmsegmentation==0.23.0
 RUN pip3 install pyyaml==6.0
 RUN pip3 install open3d==0.13.0
