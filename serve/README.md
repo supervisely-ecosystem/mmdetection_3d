@@ -1,7 +1,6 @@
 
 <div align="center" markdown>
-<img src="![serve mmdetection 3d](https://user-images.githubusercontent.com/48245050/182628092-dbe94ed9-a977-473b-9375-ea649204b021.png)
-"/>  
+<img src="https://user-images.githubusercontent.com/48245050/182628092-dbe94ed9-a977-473b-9375-ea649204b021.png"/>  
 
 # Serve MMDetection3D
 
