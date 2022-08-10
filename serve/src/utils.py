@@ -80,7 +80,7 @@ def get_table_columns(metrics):
 
 
 def download_sly_file(remote_path, local_path, progress=None):
-    file_info = g.api.file.get_info_by_path(g.TEAM_ID, remote_path)
+    file_info = g.api.file.get_info_by_path(g.team_id, remote_path)
     if file_info is None:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), remote_path)
     if progress is not None:
@@ -88,7 +88,7 @@ def download_sly_file(remote_path, local_path, progress=None):
         progress_cb = progress.increment
     else:
         progress_cb = None
-    g.api.file.download(g.TEAM_ID, remote_path, local_path, g.my_app.cache, progress_cb)
+    g.api.file.download(g.team_id, remote_path, local_path, g.my_app.cache, progress_cb)
     if progress is not None:
         progress.reset_and_update()
 
@@ -100,8 +100,8 @@ def download_custom_config(state):
     weights_remote_dir = os.path.dirname(state["weightsPath"])
     model_config_local_path = os.path.join(g.my_app.data_dir, 'config.py')
 
-    config_remote_dir = os.path.join(weights_remote_dir, f'config.py')
-    if g.api.file.exists(g.TEAM_ID, config_remote_dir):
+    config_remote_dir = os.path.join(weights_remote_dir, 'config.py')
+    if g.api.file.exists(g.team_id, config_remote_dir):
         download_sly_file(config_remote_dir, model_config_local_path)
     return model_config_local_path
 
