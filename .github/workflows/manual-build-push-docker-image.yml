@@ -7,14 +7,6 @@ on:
         description: 'Docker Image Tag'     
         required: true
         default: ''
-      branch:
-        description: 'Branch to use'
-        required: true
-        default: 'master'
-        type: choice
-        options:
-        - master
-        - train
 
 jobs:
   docker:
