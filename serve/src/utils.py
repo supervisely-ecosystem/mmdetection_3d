@@ -226,6 +226,7 @@ def inference_model(model, local_pointcloud_path, thresh=0.3, selected_classes=N
     #     pcd_np[:,1].max(), 
     #     pcd_np[:,2].max()
     # ]
+    model.cfg.point_cloud_range = [0, -40, -3, 70.4, 40, 1]
 
     model.cfg.data.test.pipeline[0].load_dim = point_dims
     model.cfg.data.test.pipeline[0].use_dim = point_dims
