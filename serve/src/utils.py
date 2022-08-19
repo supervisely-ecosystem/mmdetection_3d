@@ -80,7 +80,7 @@ def get_table_columns(metrics):
 
 
 def download_sly_file(remote_path, local_path, progress=None):
-    file_info = g.api.file.get_info_by_path(g.TEAM_ID, remote_path)
+    file_info = g.api.file.get_info_by_path(g.team_id, remote_path)
     if file_info is None:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), remote_path)
     if progress is not None:
@@ -88,7 +88,7 @@ def download_sly_file(remote_path, local_path, progress=None):
         progress_cb = progress.increment
     else:
         progress_cb = None
-    g.api.file.download(g.TEAM_ID, remote_path, local_path, g.my_app.cache, progress_cb)
+    g.api.file.download(g.team_id, remote_path, local_path, g.my_app.cache, progress_cb)
     if progress is not None:
         progress.reset_and_update()
 
@@ -100,8 +100,8 @@ def download_custom_config(state):
     weights_remote_dir = os.path.dirname(state["weightsPath"])
     model_config_local_path = os.path.join(g.my_app.data_dir, 'config.py')
 
-    config_remote_dir = os.path.join(weights_remote_dir, f'config.py')
-    if g.api.file.exists(g.TEAM_ID, config_remote_dir):
+    config_remote_dir = os.path.join(weights_remote_dir, 'config.py')
+    if g.api.file.exists(g.team_id, config_remote_dir):
         download_sly_file(config_remote_dir, model_config_local_path)
     return model_config_local_path
 
@@ -153,16 +153,21 @@ def init_model_and_cfg(state):
     obj_classes = sly.ObjClassCollection([sly.ObjClass(k, Cuboid3d) for k in labels])
     g.meta = sly.ProjectMeta(obj_classes=obj_classes)
     
-    if hasattr(cfg.model, "pts_voxel_encoder") and hasattr(cfg.model.pts_voxel_encoder, "in_channels"):
-        cfg.model.pts_voxel_encoder.in_channels = 3
+    # if hasattr(cfg.model, "pts_voxel_encoder") and hasattr(cfg.model.pts_voxel_encoder, "in_channels"):
+    #     cfg.model.pts_voxel_encoder.in_channels = 3
 
-    if hasattr(cfg.model, "voxel_encoder") and hasattr(cfg.model.voxel_encoder, "in_channels"):
-        cfg.model.voxel_encoder.in_channels = 3
+    # if hasattr(cfg.model, "voxel_encoder") and hasattr(cfg.model.voxel_encoder, "in_channels"):
+    #     cfg.model.voxel_encoder.in_channels = 3
 
-    # TODO: don't works
+    # TODO: doesn't work
     if g.model_name == "Part-A2":
         cfg.model.type = "PartA2Fixed"
         cfg.model.voxel_layer.max_voxels=(800, 800)
+
+    if g.model_name == "CenterPoint":
+        cfg.model.type = "CenterPointFixed"
+        cfg.model.pts_bbox_head.type = "CenterHeadWithVel"
+        cfg.model.pts_middle_encoder.in_channels = 4
 
     try:
         g.model = init_model(cfg, g.local_weights_path, state["device"]) 
@@ -204,18 +209,15 @@ def get_per_box_predictions(result, score_thr, selected_classes):
 
 
 def inference_model(model, local_pointcloud_path, thresh=0.3, selected_classes=None):
-    # TODO: use plyfile.PlyData instead of o3d if it is possible
     pcd = o3d.io.read_point_cloud(local_pointcloud_path)
     pcd_np = np.asarray(pcd.points)
-    point_dims = 3
-    if g.model_name in ["3DSSD", "PointRCNN"]:
-        intensity = np.ones((pcd_np.shape[0], 1)).astype(np.float32) * 0.5
-        intensity += np.random.normal(0, 0.1, size=intensity.shape)
-        pcd_np = np.hstack((pcd_np, intensity))
-        point_dims = 4
+    # point_dims = 4
+    # if g.model_name in ["3DSSD", "PointRCNN"]:
+    intensity = np.zeros((pcd_np.shape[0], 1)).astype(np.float32)
+    pcd_np = np.hstack((pcd_np, intensity))
+    point_dims = 4
     pcd_np.astype(np.float32).tofile(local_pointcloud_path)
     
-
     model.cfg.data.test.box_type_3d = 'lidar'
     # TODO: I'm not sure that it is good to change this default parameter
     # model.cfg.point_cloud_range = [

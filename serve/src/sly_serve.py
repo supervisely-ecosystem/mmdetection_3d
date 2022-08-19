@@ -14,6 +14,7 @@ import numpy as np
 from collections import OrderedDict
 
 import parta2
+import centerpoint
 
 
 def send_error_data(func):
