@@ -26,13 +26,8 @@
                 "model_name" : "PointPillars",
                 "yml_file" : "pointpillars/metafile.yml",
                 "paper_from": "CVPR",
+                "exclude": "hv_pointpillars_secfpn_sbn_2x16_2x_waymo*",
                 "year": 2019
-            },
-            {
-                "model_name" : "SECOND",
-                "yml_file" : "second/metafile.yml",
-                "paper_from": "Sensor",
-                "year": 2018
             }
         ]
     },
