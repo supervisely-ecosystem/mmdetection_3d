@@ -177,7 +177,15 @@ def init_model_and_cfg(state):
         sly.logger.exception(e)
         raise e
 
-def get_per_box_predictions(result, score_thr, selected_classes):
+def rotate(source_angle, delta):
+    result = source_angle + delta
+    if result > np.pi:
+        result = -np.pi + (result - np.pi)
+    elif result < -np.pi:
+        result = np.pi + (result + np.pi)
+    return result
+
+def get_per_box_predictions(result, score_thr, selected_classes, cfg):
     if 'pts_bbox' in result[0].keys():
         preds = result[0]['pts_bbox']
     else:
@@ -201,7 +209,11 @@ def get_per_box_predictions(result, score_thr, selected_classes):
             continue
         det["translation"] = pred_bboxes[i,:3].tolist()
         det["size"] = pred_bboxes[i,3:6].tolist()
+        if cfg.dataset_type != "SuperviselyDataset":
+            det["size"] = [det["size"][1], det["size"][0], det["size"][2]]
         det["rotation"] = pred_bboxes[i,6].item()
+        if cfg.dataset_type != "SuperviselyDataset":
+            det["rotation"] = rotate(det["rotation"], -np.pi * 0.5)
         det["velocity"] = pred_bboxes[i,7:].tolist()
         det["detection_score"] = pred_scores[i].item()
         results.append(det)
@@ -209,13 +221,11 @@ def get_per_box_predictions(result, score_thr, selected_classes):
 
 
 def inference_model(model, local_pointcloud_path, thresh=0.3, selected_classes=None):
+    point_dims = 4
     pcd = o3d.io.read_point_cloud(local_pointcloud_path)
     pcd_np = np.asarray(pcd.points)
-    # point_dims = 4
-    # if g.model_name in ["3DSSD", "PointRCNN"]:
-    intensity = np.zeros((pcd_np.shape[0], 1)).astype(np.float32)
+    intensity = np.zeros((pcd_np.shape[0], 1), dtype=np.float32)
     pcd_np = np.hstack((pcd_np, intensity))
-    point_dims = 4
     pcd_np.astype(np.float32).tofile(local_pointcloud_path)
     
     model.cfg.data.test.box_type_3d = 'lidar'
@@ -235,6 +245,6 @@ def inference_model(model, local_pointcloud_path, thresh=0.3, selected_classes=N
         if pipeline_step.type == "LoadPointsFromMultiSweeps":
             del model.cfg.data.test.pipeline[idx]
     result, data = inference_detector(model, local_pointcloud_path)
-    result = get_per_box_predictions(result, thresh, selected_classes)
+    result = get_per_box_predictions(result, thresh, selected_classes, model.cfg)
 
     return result
