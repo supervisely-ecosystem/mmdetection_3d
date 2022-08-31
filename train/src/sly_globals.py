@@ -52,26 +52,11 @@ sly.fs.mkdir(checkpoints_dir)
 
 meta: sly.ProjectMeta = None
 
-# Temporary solution. 
-# TODO: It is needed to implement like in other MMtoolbox-apps in supervisely 
-# when MMdetection3D 1.0.0 will be released and available to install from pip
 configs_dir = "/tmp/mmdet3d/configs"
-# mmdet3d_ver = pkg_resources.get_distribution("mmdet3d").version
-# zip_path = f"/tmp/mmdet3d/v{mmdet3d_ver}.zip"
-# if os.path.exists(zip_path) and os.path.isfile(zip_path) and not os.path.exists(configs_dir):
 if not os.path.exists(configs_dir):
-    # sly.logger.info(f"Getting model configs of current mmdetection version {mmdet3d_ver}...")
-    # copied_zip_path = os.path.join(my_app.data_dir, f"v{mmdet3d_ver}.zip")
-    # shutil.copyfile(zip_path, copied_zip_path)
-    # with zipfile.ZipFile(copied_zip_path, 'r') as zip_ref:
-    #     zip_ref.extractall(my_app.data_dir)
-    # unzipped_dir = os.path.join(my_app.data_dir, f"mmdetection3d-{mmdet3d_ver}")
-    unzipped_dir = "/tmp/mmdet3d/mmdetection3d"
-    if os.path.isdir(unzipped_dir):
-        shutil.move(os.path.join(unzipped_dir, "configs"), configs_dir)
-    # if os.path.isdir(configs_dir):
-    #     shutil.rmtree(unzipped_dir)
-    #     os.remove(copied_zip_path)
+    repo_dir = "/tmp/mmdet3d/mmdetection3d"
+    if os.path.isdir(repo_dir):
+        shutil.move(os.path.join(repo_dir, "configs"), configs_dir)
 os.makedirs(configs_dir, exist_ok=True)
 config_folders_cnt = len(os.listdir(configs_dir))
 sly.logger.info(f"Found {config_folders_cnt} folders in {configs_dir} directory.")

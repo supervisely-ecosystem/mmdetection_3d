@@ -156,7 +156,7 @@ class CenterHeadWithVel(CenterHead):
             inds.append(ind)
         return heatmaps, anno_boxes, inds, masks
 
-    # @force_fp32(apply_to=('preds_dicts'))
+    @force_fp32(apply_to=('preds_dicts'))
     def loss(self, gt_bboxes_3d, gt_labels_3d, preds_dicts, **kwargs):
         """Loss function for CenterHead.
 
@@ -207,7 +207,7 @@ class CenterHeadWithVel(CenterHead):
             bbox_weights = mask * mask.new_tensor(code_weights)
             loss_bbox = self.loss_bbox(
                 pred, target_box, bbox_weights, avg_factor=(num + 1e-4))
-            # loss_dict[f'task{task_id}.loss_heatmap'] = loss_heatmap
+            loss_dict[f'task{task_id}.loss_heatmap'] = loss_heatmap
             loss_dict[f'task{task_id}.loss_bbox'] = loss_bbox
         return loss_dict
 
@@ -226,6 +226,7 @@ class CenterPointFixed(CenterPoint):
         x = self.pts_backbone(x)
         if self.with_pts_neck:
             x = self.pts_neck(x)
-        if self.train_cfg['pts']['out_size_factor'] == 4:
+        if self.train_cfg is not None and \
+           self.train_cfg['pts']['out_size_factor'] == 4:
             x[0] = F.interpolate(x[0], scale_factor=2, mode='bilinear')
         return x

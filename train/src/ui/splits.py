@@ -58,6 +58,8 @@ def init(project_info, project_meta: sly.ProjectMeta, data, state):
     data["doneSplits"] = False
     state["collapsedSplits"] = True
     state["disabledSplits"] = True
+    state["point_cloud_range"] = None
+    state["centerize"] = [False, False, False] # [x, y, z]
 
     init_progress("ConvertTrain", state)
     init_progress("ConvertVal", state)
@@ -180,11 +182,11 @@ def create_splits(api: sly.Api, task_id, context, state, app_logger):
         if train_set is not None:
             sly.logger.info("Converting train annotations to mmdet3d format...")
             # if not osp.exists(train_set_path): # TODO: for debug
-            save_set_to_annotation(train_set_path, train_set, state["selectedClasses"], "Train")
+            save_set_to_annotation(state, train_set_path, train_set, "Train")
         if val_set is not None:
             sly.logger.info("Converting val annotations to mmdet3d format...")
             # if not osp.exists(val_set_path): # TODO: for debug
-            save_set_to_annotation(val_set_path, val_set, state["selectedClasses"], "Val")
+            save_set_to_annotation(state, val_set_path, val_set, "Val")
         step_done = True
     except Exception as e:
         train_set = None
@@ -196,7 +198,7 @@ def create_splits(api: sly.Api, task_id, context, state, app_logger):
             {"field": "state.splitInProgress", "payload": False},
             {"field": "data.doneSplits", "payload": step_done},
             {"field": "state.trainImagesCount", "payload": None if train_set is None else len(train_set)},
-            {"field": "state.valImagesCount", "payload": None if val_set is None else len(val_set)},
+            {"field": "state.valImagesCount", "payload": None if val_set is None else len(val_set)}
         ]
         if step_done is True:
             fields.extend([
@@ -207,7 +209,18 @@ def create_splits(api: sly.Api, task_id, context, state, app_logger):
         g.api.app.set_fields(g.task_id, fields)
 
 
-def save_set_to_annotation(save_path, items, selected_classes, split_name):
+def centerize_ptc(points, centerize):
+    centerize_vec = [0, 0, 0]
+    for i in range(3):
+        if centerize[i]:
+            dim_trans = points[:,i].min() + (points[:,i].max() - points[:,i].min()) * 0.5
+            points[:,i] -= dim_trans
+            centerize_vec[i] = -dim_trans
+
+    return points, centerize_vec
+
+
+def save_set_to_annotation(state, save_path, items, split_name):
     fields = [
         {"field": f"state.progressConvert{split_name}", "payload": True},
         {"field": f"state.progressTotalConvert{split_name}", "payload": len(items)},
@@ -221,6 +234,7 @@ def save_set_to_annotation(save_path, items, selected_classes, split_name):
     pcds_to_frames = {}
     if len(items) < log_step:
         log_step = len(items)
+    
     for idx, item in enumerate(items):
         if idx % log_step == 0:
             fields = [
@@ -243,12 +257,20 @@ def save_set_to_annotation(save_path, items, selected_classes, split_name):
         os.makedirs(osp.join(g.project_dir, osp.dirname(bin_filename)), exist_ok=True)
         pcd = o3d.io.read_point_cloud(osp.join(g.project_dir, filename))
         pcd_np = np.asarray(pcd.points)
-        # point_dims = 3
-        # if g.model_name in ["3DSSD", "PointRCNN"]:
-        #     intensity = np.ones((pcd_np.shape[0], 1)).astype(np.float32) * 0.5
-        #     intensity += np.random.normal(0, 0.1, size=intensity.shape)
-        #     pcd_np = np.hstack((pcd_np, intensity))
-        #     point_dims = 4
+
+        trans_vec = [0, 0, 0]
+        if True in state["centerize"]:
+            pcd_np, trans_vec = centerize_ptc(pcd_np, state["centerize"])
+            ptc_range = [
+                pcd_np[:,0].min(), 
+                pcd_np[:,1].min(), 
+                pcd_np[:,2].min(),
+                pcd_np[:,0].max(),
+                pcd_np[:,1].max(),
+                pcd_np[:,2].max()
+            ]
+        intensity = np.zeros((pcd_np.shape[0], 1), dtype=np.float32)
+        pcd_np = np.hstack((pcd_np, intensity))
         pcd_np.astype(np.float32).tofile(osp.join(g.project_dir, bin_filename))
         ptc_info['lidar_points']['lidar_path'] = bin_filename
 
@@ -266,23 +288,27 @@ def save_set_to_annotation(save_path, items, selected_classes, split_name):
             if frame.index != int(frame_number):
                 continue
             for fig in frame.figures:
-                if fig.video_object.obj_class.name not in selected_classes:
+                if fig.video_object.obj_class.name not in state["selectedClasses"]:
                     continue
                 ptc_info['annos']['gt_names'].append(fig.video_object.obj_class.name)
                 box_info = [] # x, y, z, dx, dy, dz, rot, [vel_x, vel_y]
                 pos = fig.geometry.position
-                box_info.extend([pos.x, pos.y, pos.z])
+                # Prepare coords with centerization
+                box_pos = [pos.x + trans_vec[0], pos.y + trans_vec[1], pos.z + trans_vec[2]]
+                box_info.extend(box_pos)
                 dim = fig.geometry.dimensions
                 box_info.extend([dim.x, dim.y, dim.z])
                 box_info.extend([fig.geometry.rotation.z])
-                # box_info.extend([0, 0]) # TODO: add vel
+                box_info.extend([0, 0]) # TODO: add vel
                 ptc_info['annos']['gt_bboxes_3d'].append(box_info)
-                ptc_info['annos']['gt_labels_3d'].append(selected_classes.index(fig.video_object.obj_class.name))
+                ptc_info['annos']['gt_labels_3d'].append(state["selectedClasses"].index(fig.video_object.obj_class.name))
         ptc_info['annos']['gt_bboxes_3d'] = np.array(ptc_info['annos']['gt_bboxes_3d'], dtype=np.float32)
         ptc_info['annos']['gt_labels_3d'] = np.array(ptc_info['annos']['gt_labels_3d'], dtype=np.int32)
         annotations.append(ptc_info)
 
     g.api.app.set_field(g.task_id, f"state.progressConvert{split_name}", False)
+    if True in state["centerize"] and split_name == "Train":
+        g.api.app.set_field(g.task_id, f"state.point_cloud_range", ptc_range)
 
     with open(save_path, 'wb') as f:
         pkl.dump(annotations, f)

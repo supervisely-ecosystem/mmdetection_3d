@@ -153,13 +153,7 @@ def init_model_and_cfg(state):
     obj_classes = sly.ObjClassCollection([sly.ObjClass(k, Cuboid3d) for k in labels])
     g.meta = sly.ProjectMeta(obj_classes=obj_classes)
     
-    # if hasattr(cfg.model, "pts_voxel_encoder") and hasattr(cfg.model.pts_voxel_encoder, "in_channels"):
-    #     cfg.model.pts_voxel_encoder.in_channels = 3
-
-    # if hasattr(cfg.model, "voxel_encoder") and hasattr(cfg.model.voxel_encoder, "in_channels"):
-    #     cfg.model.voxel_encoder.in_channels = 3
-
-    # TODO: doesn't work
+    # TODO: doesn't work now
     if g.model_name == "Part-A2":
         cfg.model.type = "PartA2Fixed"
         cfg.model.voxel_layer.max_voxels=(800, 800)
@@ -168,6 +162,19 @@ def init_model_and_cfg(state):
         cfg.model.type = "CenterPointFixed"
         cfg.model.pts_bbox_head.type = "CenterHeadWithVel"
         cfg.model.pts_middle_encoder.in_channels = 4
+        cfg.model.pts_voxel_encoder.num_features = 4
+
+    cfg.data.test.box_type_3d = 'lidar'
+
+    cfg.data.test.pipeline[0].load_dim = 4
+    cfg.data.test.pipeline[0].use_dim = 4
+
+    for idx, pipeline_step in enumerate(cfg.data.test.pipeline):
+        if pipeline_step.type == "LoadPointsFromMultiSweeps":
+            del cfg.data.test.pipeline[idx]
+
+    # TODO: add data pipeline fixes from train
+    # TODO: add point_cloud_range fixes (maybe optional)
 
     try:
         g.model = init_model(cfg, g.local_weights_path, state["device"]) 
@@ -177,7 +184,15 @@ def init_model_and_cfg(state):
         sly.logger.exception(e)
         raise e
 
-def get_per_box_predictions(result, score_thr, selected_classes):
+def rotate(source_angle, delta):
+    result = source_angle + delta
+    if result > np.pi:
+        result = -np.pi + (result - np.pi)
+    elif result < -np.pi:
+        result = np.pi + (result + np.pi)
+    return result
+
+def get_per_box_predictions(result, score_thr, selected_classes, cfg, centerize_vec):
     if 'pts_bbox' in result[0].keys():
         preds = result[0]['pts_bbox']
     else:
@@ -200,8 +215,14 @@ def get_per_box_predictions(result, score_thr, selected_classes):
         if selected_classes is not None and det["detection_name"] not in selected_classes:
             continue
         det["translation"] = pred_bboxes[i,:3].tolist()
+        for i in range(3):
+            det["translation"][i] += centerize_vec[i]
         det["size"] = pred_bboxes[i,3:6].tolist()
+        if cfg.dataset_type != "SuperviselyDataset":
+            det["size"] = [det["size"][1], det["size"][0], det["size"][2]]
         det["rotation"] = pred_bboxes[i,6].item()
+        if cfg.dataset_type != "SuperviselyDataset":
+            det["rotation"] = rotate(det["rotation"], -np.pi * 0.5)
         det["velocity"] = pred_bboxes[i,7:].tolist()
         det["detection_score"] = pred_scores[i].item()
         results.append(det)
@@ -211,30 +232,19 @@ def get_per_box_predictions(result, score_thr, selected_classes):
 def inference_model(model, local_pointcloud_path, thresh=0.3, selected_classes=None):
     pcd = o3d.io.read_point_cloud(local_pointcloud_path)
     pcd_np = np.asarray(pcd.points)
-    # point_dims = 4
-    # if g.model_name in ["3DSSD", "PointRCNN"]:
-    intensity = np.zeros((pcd_np.shape[0], 1)).astype(np.float32)
+    centerize_vec = [0, 0, 0]
+    if hasattr(model.cfg, "centerize_points"):
+        for i in range(3):
+            if model.cfg.centerize_points[i]:
+                dim_trans = pcd_np[:,i].min() + (pcd_np[:,i].max() - pcd_np[:,i].min()) * 0.5
+                pcd_np[:,i] -= dim_trans
+                centerize_vec[i] = dim_trans
+
+    intensity = np.zeros((pcd_np.shape[0], 1), dtype=np.float32)
     pcd_np = np.hstack((pcd_np, intensity))
-    point_dims = 4
     pcd_np.astype(np.float32).tofile(local_pointcloud_path)
     
-    model.cfg.data.test.box_type_3d = 'lidar'
-    # TODO: I'm not sure that it is good to change this default parameter
-    # model.cfg.point_cloud_range = [
-    #     pcd_np[:,0].min(), 
-    #     pcd_np[:,1].min(), 
-    #     pcd_np[:,2].min(), 
-    #     pcd_np[:,0].max(), 
-    #     pcd_np[:,1].max(), 
-    #     pcd_np[:,2].max()
-    # ]
-
-    model.cfg.data.test.pipeline[0].load_dim = point_dims
-    model.cfg.data.test.pipeline[0].use_dim = point_dims
-    for idx, pipeline_step in enumerate(model.cfg.data.test.pipeline):
-        if pipeline_step.type == "LoadPointsFromMultiSweeps":
-            del model.cfg.data.test.pipeline[idx]
-    result, data = inference_detector(model, local_pointcloud_path)
-    result = get_per_box_predictions(result, thresh, selected_classes)
+    result, _ = inference_detector(model, local_pointcloud_path)
+    result = get_per_box_predictions(result, thresh, selected_classes, model.cfg, centerize_vec)
 
     return result
