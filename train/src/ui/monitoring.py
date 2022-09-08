@@ -13,6 +13,7 @@ import centerpoint
 import sly_dataset
 
 
+
 def init(data, state):
     state["collapsedMonitoring"] = True
     state["disabledMonitoring"] = True
@@ -42,10 +43,20 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         cfg.runner = ConfigDict()
         cfg.runner.type = "EpochBasedRunner"
     # if not hasattr(cfg.runner, "max_epochs"):
-    cfg.runner.max_epochs = 50
+    cfg.runner.max_epochs = 30
 
-    cfg.log_config.interval = 5
-    # cfg.optimizer.lr = 1e-2
+    cfg.log_config.interval = 1
+    cfg.optimizer.lr = 1e-3
+    cfg.lr_config = ConfigDict()
+    cfg.lr_config.policy = 'step'
+    cfg.lr_config.step = 5
+    cfg.lr_config.gamma = 0.1
+    cfg.lr_config.min_lr = 1e-7
+
+    # cfg.lr_config.target_ratio = (100, 1e-6)
+    # cfg.lr_config.cyclic_times = 1
+    # cfg.lr_config.step_ratio_up = 0.2
+    # cfg.lr_config.anneal_strategy = 'linear'
 
     eval_pipeline_len = len(cfg.eval_pipeline)
     for idx, pipeline_step in enumerate(cfg.eval_pipeline[::-1]):
@@ -57,22 +68,31 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         elif pipeline_step.type == "DefaultFormatBundle3D":
             cfg.eval_pipeline[eval_pipeline_len - 1 - idx].class_names = cfg.class_names
 
-    cfg.evaluation.interval = 1
+    cfg.evaluation.interval = 5
     cfg.evaluation.pipeline = cfg.eval_pipeline
     # cfg.evaluation.save_best = "auto" if state["saveBest"] else None
     # cfg.evaluation.rule = "greater"
     cfg.evaluation.out_dir = g.checkpoints_dir
     cfg.evaluation.by_epoch = True
     # cfg.evaluation.classwise = True
+    cfg.checkpoint_config.interval=5
 
     seed = init_random_seed(0)
-    set_random_seed(seed, deterministic=False)
+    set_random_seed(seed, deterministic=True)
     cfg.seed = seed
 
-    # TODO: maybe change
-    # cfg.point_cloud_range = state["point_cloud_range"]
+    # TODO: choice: based on config or based on data (and any checks maybe)
+    
+    cfg.point_cloud_range = state["point_cloud_range"]
+    ss = cfg.model.pts_middle_encoder.sparse_shape
+    pcr = cfg.point_cloud_range
+    cfg.voxel_size = [
+        (pcr[3] - pcr[0]) / ss[1],
+        (pcr[4] - pcr[1]) / ss[2],
+        (pcr[5] - pcr[2]) / (ss[0] - 1),
+    ]
 
-    # TODO: add to serve
+    # TODO: add to serve?
     train_pipeline_len = len(cfg.train_pipeline)
     for idx, pipeline_step in enumerate(cfg.train_pipeline[::-1]):
         if pipeline_step.type == "LoadPointsFromMultiSweeps":
@@ -89,13 +109,16 @@ def train(api: sly.Api, task_id, context, state, app_logger):
             del cfg.train_pipeline[train_pipeline_len - 1 - idx]
             # cfg.train_pipeline[train_pipeline_len - 1 - idx].db_sampler = None
         # TODO: remove/change in the future
+        elif pipeline_step.type == "RandomFlip3D":
+            cfg.train_pipeline[train_pipeline_len - 1 - idx].flip_ratio_bev_horizontal = 0.
+            cfg.train_pipeline[train_pipeline_len - 1 - idx].flip_ratio_bev_vertical = 0.
         elif pipeline_step.type == "GlobalRotScaleTrans":
             cfg.train_pipeline[train_pipeline_len - 1 - idx].rot_range = [0., 0.]
             cfg.train_pipeline[train_pipeline_len - 1 - idx].scale_ratio_range = [1., 1.]
-        # elif pipeline_step.type == "PointsRangeFilter":
-        #     cfg.train_pipeline[train_pipeline_len - 1 - idx].point_cloud_range = cfg.point_cloud_range
-        # elif pipeline_step.type == "ObjectRangeFilter":
-        #     cfg.train_pipeline[train_pipeline_len - 1 - idx].point_cloud_range = cfg.point_cloud_range
+        elif pipeline_step.type == "PointsRangeFilter":
+            cfg.train_pipeline[train_pipeline_len - 1 - idx].point_cloud_range = cfg.point_cloud_range
+        elif pipeline_step.type == "ObjectRangeFilter":
+            cfg.train_pipeline[train_pipeline_len - 1 - idx].point_cloud_range = cfg.point_cloud_range
     
     test_pipeline_len = len(cfg.test_pipeline)
     for idx, pipeline_step in enumerate(cfg.test_pipeline[::-1]):
@@ -106,19 +129,21 @@ def train(api: sly.Api, task_id, context, state, app_logger):
             cfg.test_pipeline[test_pipeline_len - 1 - idx].use_dim = dims
         elif pipeline_step.type == "MultiScaleFlipAug3D":
             for tr_idx, transform in enumerate(pipeline_step.transforms):
-                # if transform.type == "PointsRangeFilter":
-                #     cfg.test_pipeline[test_pipeline_len - 1 - idx].transforms[tr_idx].point_cloud_range=cfg.point_cloud_range
+                if transform.type == "PointsRangeFilter":
+                    cfg.test_pipeline[test_pipeline_len - 1 - idx].transforms[tr_idx].point_cloud_range=cfg.point_cloud_range
                 if transform.type == "DefaultFormatBundle3D":
                     cfg.test_pipeline[test_pipeline_len - 1 - idx].transforms[tr_idx].class_names=cfg.class_names
 
-    cfg.data.samples_per_gpu = 5
+    cfg.data.samples_per_gpu = 2
     cfg.data.workers_per_gpu = 2
+    cfg.data.persistent_workers = True
 
     cfg.data.train.type = cfg.dataset_type
     cfg.data.train.pipeline = cfg.train_pipeline
     cfg.data.train.data_root = cfg.data_root
     cfg.data.train.ann_file = osp.join(g.my_app.data_dir, "train.pkl")
     cfg.data.train.classes = cfg.class_names
+    cfg.data.train.filter_empty_gt = False
     if hasattr(cfg.data.train, "dataset"):
         delattr(cfg.data.train, "dataset")
 
@@ -144,16 +169,21 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     cfg.model.pts_voxel_encoder.num_features = dims
 
     # TODO: check all model params below
-    # cfg.model.pts_voxel_layer.point_cloud_range = cfg.point_cloud_range
-    # cfg.model.pts_bbox_head.bbox_coder.post_center_range = cfg.point_cloud_range
-    # cfg.model.pts_bbox_head.bbox_coder.pc_range = cfg.point_cloud_range
-    # cfg.model.train_cfg.pts.code_weights = [1] * len(cfg.class_names)
-    # cfg.model.train_cfg.pts.point_cloud_range = cfg.point_cloud_range
+    cfg.model.pts_voxel_layer.voxel_size = cfg.voxel_size
+    # cfg.model.pts_voxel_layer.max_voxels = [90000, 120000] ??
+    cfg.model.pts_voxel_layer.point_cloud_range = cfg.point_cloud_range
+    cfg.model.pts_bbox_head.bbox_coder.post_center_range = cfg.point_cloud_range
+    cfg.model.pts_bbox_head.bbox_coder.pc_range = cfg.point_cloud_range
+    cfg.model.pts_bbox_head.bbox_coder.voxel_size = cfg.voxel_size[:2]
+    cfg.model.train_cfg.pts.code_weights = [1., 1., 1., 1., 1., 1., 1., 1., 0.1, 0.1] 
+    cfg.model.train_cfg.pts.point_cloud_range = cfg.point_cloud_range
+    cfg.model.train_cfg.pts.voxel_size = cfg.voxel_size
     # cfg.model.train_cfg.pts.min_radius = 2
-    # cfg.model.test_cfg.pts.post_center_limit_range = cfg.point_cloud_range
-    # cfg.model.test_cfg.pts.min_radius = 2
+    cfg.model.test_cfg.pts.post_center_limit_range = cfg.point_cloud_range
+    # cfg.model.test_cfg.pts.min_radius = [] ????
     # cfg.model.test_cfg.pts.score_threshold = 0
-    # cfg.model.test_cfg.pts.pc_range = cfg.point_cloud_range
+    cfg.model.test_cfg.pts.pc_range = cfg.point_cloud_range
+    cfg.model.test_cfg.pts.voxel_size = cfg.voxel_size[:2]
 
     class_dicts = []
     for selected_class in cfg.class_names:
@@ -177,7 +207,7 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         test_cfg=cfg.get('test_cfg'))
     
     weights_path = osp.join(cfg.work_dir, "weights.pth")
-    # checkpoint = load_checkpoint(model, weights_path, map_location='cuda:0')
+    checkpoint = load_checkpoint(model, weights_path, map_location='cuda:0')
     datasets = [build_dataset(cfg.data.train)]
     model.CLASSES = datasets[0].CLASSES
     train_model(

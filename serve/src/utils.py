@@ -214,12 +214,13 @@ def get_per_box_predictions(result, score_thr, selected_classes, cfg, centerize_
         det["detection_name"] = g.gt_index_to_labels[pred_labels[i]]
         if selected_classes is not None and det["detection_name"] not in selected_classes:
             continue
-        det["translation"] = pred_bboxes[i,:3].tolist()
-        for i in range(3):
-            det["translation"][i] += centerize_vec[i]
         det["size"] = pred_bboxes[i,3:6].tolist()
         if cfg.dataset_type != "SuperviselyDataset":
             det["size"] = [det["size"][1], det["size"][0], det["size"][2]]
+        det["translation"] = pred_bboxes[i,:3].tolist()
+        det["translation"][2] += det["size"][2] * 0.5
+        for k in range(3):
+            det["translation"][k] += centerize_vec[k]
         det["rotation"] = pred_bboxes[i,6].item()
         if cfg.dataset_type != "SuperviselyDataset":
             det["rotation"] = rotate(det["rotation"], -np.pi * 0.5)

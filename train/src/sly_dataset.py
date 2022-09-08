@@ -5,6 +5,7 @@ import numpy as np
 from mmcv.utils import print_log
 from terminaltables import AsciiTable
 import torch
+from mmdet3d.core.bbox import get_box_type
 from mmdet3d.core.bbox.structures.lidar_box3d import LiDARInstance3DBoxes
 
 
@@ -155,10 +156,16 @@ def outdoor_eval(gt_annos,
         # parse gt annotations
         gt_anno = gt_annos[img_id]
         if len(gt_anno['gt_bboxes_3d']) != 0:
-            gt_boxes = LiDARInstance3DBoxes(torch.from_numpy(gt_anno['gt_bboxes_3d']), 9)
+            gt_boxes = box_type_3d(
+                torch.from_numpy(gt_anno['gt_bboxes_3d']), 
+                box_dim=gt_anno['gt_bboxes_3d'].shape[-1],
+                origin=(0.5, 0.5, 0.5)
+            )
             labels_3d = torch.from_numpy(gt_anno['gt_labels_3d'])
         else:
-            gt_boxes = box_type_3d(np.array([], dtype=np.float32))
+            gt_boxes = box_type_3d(
+                np.array([], dtype=np.float32),
+                origin=(0.5, 0.5, 0.5))
             labels_3d = np.array([], dtype=np.int64)
 
         for i in range(len(labels_3d)):
@@ -212,6 +219,57 @@ def outdoor_eval(gt_annos,
 
 @DATASETS.register_module()
 class SuperviselyDataset(Custom3DDataset):
+    def get_ann_info(self, index):
+        """Get annotation info according to the given index.
+
+        Args:
+            index (int): Index of the annotation data to get.
+
+        Returns:
+            dict: Annotation information consists of the following keys:
+
+                - gt_bboxes_3d (:obj:`LiDARInstance3DBoxes`):
+                    3D ground truth bboxes
+                - gt_labels_3d (np.ndarray): Labels of ground truths.
+                - gt_names (list[str]): Class names of ground truths.
+        """
+        info = self.data_infos[index]
+        gt_bboxes_3d = info['annos']['gt_bboxes_3d']
+        gt_names_3d = info['annos']['gt_names']
+        gt_labels_3d = []
+        for cat in gt_names_3d:
+            if cat in self.CLASSES:
+                gt_labels_3d.append(self.CLASSES.index(cat))
+            else:
+                gt_labels_3d.append(-1)
+        gt_labels_3d = np.array(gt_labels_3d)
+
+        # Obtain original box 3d type in info file
+        ori_box_type_3d = info['annos']['box_type_3d']
+        ori_box_type_3d, _ = get_box_type(ori_box_type_3d)
+
+        # turn original box type to target box type
+
+        if len(gt_bboxes_3d) != 0:
+            gt_bboxes_3d = ori_box_type_3d(
+                gt_bboxes_3d,
+                origin=(0.5, 0.5, 0.5),
+                box_dim=gt_bboxes_3d.shape[-1]
+            ).convert_to(self.box_mode_3d)
+        else:
+            # TODO: check that dim=9 is correct for all models
+            gt_bboxes_3d = ori_box_type_3d(
+                np.array([], dtype=np.float32), 
+                origin=(0.5, 0.5, 0.5),
+                box_dim=9
+            ).convert_to(self.box_mode_3d)
+
+        anns_results = dict(
+            gt_bboxes_3d=gt_bboxes_3d,
+            gt_labels_3d=gt_labels_3d,
+            gt_names=gt_names_3d)
+        return anns_results
+
     def evaluate(self,
                  results,
                  metric=None,

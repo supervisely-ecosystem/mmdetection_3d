@@ -5,12 +5,8 @@ import os.path as osp
 import random
 import numpy as np
 import pickle as pkl
-from itertools import groupby
 from collections import namedtuple
 import open3d as o3d
-
-from supervisely.video_annotation.key_id_map import KeyIdMap
-from supervisely.video_annotation.video_figure import VideoFigure
 
 ItemInfo = namedtuple('ItemInfo', ['dataset_name', 'name', 'img_path'])
 train_set = None
@@ -59,7 +55,7 @@ def init(project_info, project_meta: sly.ProjectMeta, data, state):
     state["collapsedSplits"] = True
     state["disabledSplits"] = True
     state["point_cloud_range"] = None
-    state["centerize"] = [False, False, False] # [x, y, z]
+    state["centerize"] = [True, True, False] # [x, y, z]
 
     init_progress("ConvertTrain", state)
     init_progress("ConvertVal", state)
@@ -185,8 +181,10 @@ def create_splits(api: sly.Api, task_id, context, state, app_logger):
             save_set_to_annotation(state, train_set_path, train_set, "Train")
         if val_set is not None:
             sly.logger.info("Converting val annotations to mmdet3d format...")
-            # if not osp.exists(val_set_path): # TODO: for debug
-            save_set_to_annotation(state, val_set_path, val_set, "Val")
+            #if not osp.exists(val_set_path): # TODO: for debug
+            # TODO: eval on the same boxes for debug
+            # save_set_to_annotation(state, val_set_path, val_set, "Val")
+            save_set_to_annotation(state, val_set_path, train_set, "Val")
         step_done = True
     except Exception as e:
         train_set = None
@@ -257,18 +255,24 @@ def save_set_to_annotation(state, save_path, items, split_name):
         os.makedirs(osp.join(g.project_dir, osp.dirname(bin_filename)), exist_ok=True)
         pcd = o3d.io.read_point_cloud(osp.join(g.project_dir, filename))
         pcd_np = np.asarray(pcd.points)
-
         trans_vec = [0, 0, 0]
-        if True in state["centerize"]:
+        if any(state["centerize"]):
             pcd_np, trans_vec = centerize_ptc(pcd_np, state["centerize"])
-            ptc_range = [
-                pcd_np[:,0].min(), 
-                pcd_np[:,1].min(), 
-                pcd_np[:,2].min(),
-                pcd_np[:,0].max(),
-                pcd_np[:,1].max(),
-                pcd_np[:,2].max()
-            ]
+        ptc_range = [
+            pcd_np[:,0].min(), 
+            pcd_np[:,1].min(), 
+            pcd_np[:,2].min(),
+            pcd_np[:,0].max(),
+            pcd_np[:,1].max(),
+            pcd_np[:,2].max()
+        ]
+        if split_name == "Train":
+            point_cloud_range = [10000, 10000, 10000, -10000, -10000, -10000]
+            for i in range(3):
+                if ptc_range[i] < point_cloud_range[i]:
+                    point_cloud_range[i] = ptc_range[i]
+                if ptc_range[i + 3] > point_cloud_range[i + 3]:
+                    point_cloud_range[i + 3] = ptc_range[i + 3]
         intensity = np.zeros((pcd_np.shape[0], 1), dtype=np.float32)
         pcd_np = np.hstack((pcd_np, intensity))
         pcd_np.astype(np.float32).tofile(osp.join(g.project_dir, bin_filename))
@@ -307,8 +311,8 @@ def save_set_to_annotation(state, save_path, items, split_name):
         annotations.append(ptc_info)
 
     g.api.app.set_field(g.task_id, f"state.progressConvert{split_name}", False)
-    if True in state["centerize"] and split_name == "Train":
-        g.api.app.set_field(g.task_id, f"state.point_cloud_range", ptc_range)
+    if split_name == "Train":
+        g.api.app.set_field(g.task_id, f"state.point_cloud_range", point_cloud_range)
 
     with open(save_path, 'wb') as f:
         pkl.dump(annotations, f)

@@ -120,7 +120,7 @@ class Annotation:
             x, y, z = l["translation"][0], l["translation"][1], l["translation"][2]
             dx, dy, dz = l["size"][0], l["size"][1], l["size"][2]
             yaw = l["rotation"]
-            position = Vector3d(float(x), float(y), float(z * 0.5))
+            position = Vector3d(float(x), float(y), float(z))
             rotation = Vector3d(0, 0, float(yaw))
             dimension = Vector3d(float(dx), float(dy), float(dz))
             g = Cuboid3d(position, rotation, dimension)
