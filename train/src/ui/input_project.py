@@ -32,9 +32,9 @@ def download(api: sly.Api, task_id, context, state, app_logger):
 
     fields = [
         {"field": "data.doneProject", "payload": True},
-        {"field": "state.collapsedClasses", "payload": False},
-        {"field": "state.disabledClasses", "payload": False},
-        {"field": "state.activeStep", "payload": 4},
+        {"field": "state.collapsedModels", "payload": False},
+        {"field": "state.disabledModels", "payload": False},
+        {"field": "state.activeStep", "payload": 2},
     ]
     g.api.app.set_fields(g.task_id, fields)
 

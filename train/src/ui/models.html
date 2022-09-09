@@ -1,0 +1,103 @@
+<sly-card title="Object detection 3D models"
+          subtitle="Choose model architecture and how weights should be initialized"
+          :options="{collapsable: true}"
+          :collapsed.sync="state.collapsedModels"
+          :disabled="{disabled: state.disabledModels, message: 'Finish the first step before selecting model.'}"
+          ref="step2"
+>
+    <el-tabs type="border-card" class="el-tabs-cards" v-model="state.weightsInitialization">
+        <el-tab-pane name="pretrained">
+            <el-radio slot="label" v-model="state.weightsInitialization" label="pretrained" :disabled="data.doneModels">
+                Pretrained models
+                <div>weights pretrained on popular datasets</div>
+            </el-radio>
+            <div class="mb10" style="display: flex; flex-direction: row; width: 100%; align-items: stretch">
+                <div style="width: 100%">
+                    <div>
+                        <div class="mb10">Architecture:</div>
+                        <el-select style="width: 300px" v-model="state.pretrainedModel" :filterable="true" class="mb10 mr15" placeholder="Select model" :disabled="data.doneModels">
+                            <el-option-group v-for="model_group in data.pretrainedModelsInfo" :key="model_group.group_name" :label="model_group.group_name">
+                                <el-option v-for="model in model_group.models" :key="model.name" :label="model.name" :value="model.name">
+                                    <span style="float: left">{{ model.name }}</span>
+                                    <span style="float: right; color: #8492a6; font-size: 13px">{{ model.paper_from }} {{model.year}}</span>
+                                </el-option>
+                            </el-option-group>
+                        </el-select>
+                        <span><a :href="data.configLinks[state.pretrainedModel]" target="_blank">Learn more...</a></span>
+                    </div>
+                    <div>
+                        <div class="mb10">Pretrained model:</div>
+                        <table class="beautiful-table">
+                            <thead>
+                                <tr>
+                                    <th v-for="row in data.modelColumns" v-if="data.pretrainedModels[state.pretrainedModel].all_keys.includes(row.key)">
+                                        <div v-html="row['title']"></div>
+                                        <div style="color: #7f858e; font-weight: normal; font-size: 10px;">
+                                            {{row["subtitle"]}}
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="model in data.pretrainedModels[state.pretrainedModel]['checkpoints']">
+                                    <template v-for="column in data.modelColumns">
+                                        <td :class="{'hid-text': column.key === 'name'}" v-if="data.pretrainedModels[state.pretrainedModel].all_keys.includes(column.key)">
+                                            <div v-if="column.key === 'name'">
+                                                <el-radio
+                                                        class="radio" v-model="state.selectedModel[state.pretrainedModel]"
+                                                        :label="model[column.key]"
+                                                        :disabled="data.doneModels">
+                                                    <div> {{model[column.key]}} </div>
+                                                </el-radio>
+                                            </div>
+                                            <div v-else>
+                                                <span v-if="model[column.key]" >{{model[column.key]}}</span><span v-else> - </span>
+                                            </div>
+                                        </td>
+                                    </template>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <span v-if="!data.doneModels">Selected checkpoint: {{state.selectedModel[state.pretrainedModel]}}</span>
+        </el-tab-pane>
+        <el-tab-pane name="custom">
+            <el-radio slot="label" v-model="state.weightsInitialization" label="custom" :disabled="true">
+                Custom weights
+                <div>load custom weights from Team Files</div>
+            </el-radio>
+            <sly-field title="Path to weights file" description="Copy path in Team Files">
+                <el-input v-model="state.weightsPath"
+                        placeholder="Path to .pth file in Team Files"></el-input>
+            </sly-field>
+        </el-tab-pane>
+    </el-tabs>
+
+    <div v-if="data.progressWeights.message" class="mt10">
+        <div style="color: #20a0ff">
+            {{data.progressWeights.message}}: {{data.progressWeights.current}} / {{data.progressWeights.total}}
+        </div>
+        <el-progress :percentage="data.progressWeights.percent"></el-progress>
+    </div>
+
+    <el-button type="primary" class="regular mt10 mr15"
+            v-if="!data.doneModels"
+            :loading="state.loadingModel"
+            @click="state.loadingModel = true; command('download_weights')">
+        Select model
+    </el-button>
+
+    <div v-if="data.doneModels">
+        <i class="zmdi zmdi-check-circle ml5 mr5 mt10" style="color: #13ce66"></i>
+        <span v-if="state.weightsInitialization == 'custom'" style="color: #5a6772;">Model {{state.pretrainedModel}} (checkpoint {{state.selectedModel[state.pretrainedModel]}}) has been successfully defined.</span>
+    </div>
+
+    <el-button type="warning" class="regular mt10" :plain="true"
+               @click="state.restartFrom = 2;"
+               v-if="data.doneModels && !state.started">
+        <i class="zmdi zmdi-rotate-left mr5"></i> Select other model
+    </el-button>
+</sly-card>

@@ -1,6 +1,7 @@
 import supervisely as sly
 import sly_globals as g
 import input_project
+import models
 import splits
 # import augs
 # import architectures
@@ -15,11 +16,11 @@ def init(data, state):
     state["activeStep"] = 1
     state["restartFrom"] = None
     input_project.init(data, state)
+    models.init(data, state)
     # task.init(data, state)
     classes.init(g.api, data, state, g.project_id, g.project_meta)
     splits.init(g.project_info, g.project_meta, data, state)
     # augs.init(data, state)
-    # architectures.init(data, state)
     # hyperparameters.init(data, state)
     monitoring.init(data, state)
 

@@ -2,8 +2,8 @@
           subtitle="Select classes, that should be used for training. Training supports only classes of shape Cuboid3D."
           :options="{collapsable: true}"
           :collapsed.sync="state.collapsedClasses"
-          :disabled="{disabled: state.disabledClasses, message: 'Select model to train at step 3 before selecting classes.'}"
-          ref="step4"
+          :disabled="{disabled: state.disabledClasses, message: 'Finish all previous steps before selecting classes.'}"
+          ref="step3"
 >
     <el-table
             class="ultra-table"
