@@ -3,6 +3,7 @@ import sly_globals as g
 import input_project
 import models
 import splits
+import data_preparation
 # import augs
 # import architectures
 # import hyperparameters
@@ -19,7 +20,8 @@ def init(data, state):
     models.init(data, state)
     # task.init(data, state)
     classes.init(g.api, data, state, g.project_id, g.project_meta)
-    splits.init(g.project_info, g.project_meta, data, state)
+    splits.init(g.project_info, data, state)
+    data_preparation.init(data, state)
     # augs.init(data, state)
     # hyperparameters.init(data, state)
     monitoring.init(data, state)

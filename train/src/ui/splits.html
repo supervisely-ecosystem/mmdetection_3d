@@ -3,7 +3,7 @@
           :options="{collapsable: true}"
           :collapsed.sync="state.collapsedSplits"
           :disabled="{disabled: state.disabledSplits, message: 'Select classes at previous step before choosing train/val splits.'}"
-          ref="step5"
+          ref="step4"
 >
     <el-tabs type="border-card" class="el-tabs-cards" v-model="state.splitMethod">
         <el-tab-pane name="random" :disabled="data.doneSplits">
@@ -79,18 +79,11 @@
         </el-tab-pane>
     </el-tabs>
 
-    <div v-if="state.progressConvertTrain" class="mt10">
+    <div v-if="state.progressPointsRangeCalculation" class="mt10">
         <div style="color: #20a0ff">
-            Converting supervisely train annotations to mmdet3d format: {{state.progressCurrentConvertTrain}} / {{state.progressTotalConvertTrain}}
+            Checking point cloud sizes: {{state.progressCurrentPointsRangeCalculation}} / {{state.progressTotalPointsRangeCalculation}}
         </div>
-        <el-progress :percentage="state.progressPercentConvertTrain"></el-progress>
-    </div>
-
-    <div v-if="state.progressConvertVal" class="mt10">
-        <div style="color: #20a0ff">
-            Converting supervisely val annotations to mmdet3d format: {{state.progressCurrentConvertVal}} / {{state.progressTotalConvertVal}}
-        </div>
-        <el-progress :percentage="state.progressPercentConvertVal"></el-progress>
+        <el-progress :percentage="state.progressPercentPointsRangeCalculation"></el-progress>
     </div>
 
     <el-button
@@ -111,7 +104,7 @@
             </span>
         </div>
         <el-button type="warning" class="regular mt10" :plain="true"
-                @click="state.restartFrom = 5;"
+                @click="state.restartFrom = 4;"
                 v-if="data.doneSplits && !state.started">
             <i class="zmdi zmdi-rotate-left mr5"></i> Recreate splits
         </el-button>

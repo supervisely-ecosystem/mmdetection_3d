@@ -1,0 +1,100 @@
+<sly-card title="Data preparation"
+          subtitle="Prepare data to training"
+          :options="{collapsable: true}"
+          :collapsed.sync="state.collapsedData"
+          :disabled="{disabled: state.disabledData, message: 'Finish previous steps before preparing data'}"
+          ref="step5"
+>
+    <sly-field title="Training mode">
+        <sly-field title="INFO: When should point clouds be splitted?"
+            description="Description"
+            style="padding-top: 0; padding-bottom: 0; margin: 10px 5px;">
+
+            <sly-icon slot="icon" :options="{ color: '#cece66', bgColor: '#f7f7eb', rounded: false }">
+                <i class="zmdi zmdi-info"></i>
+            </sly-icon>
+        </sly-field>
+        <div><el-radio v-model="state.train_data_mode" :disabled="data.doneData" label="full">Full point cloud</el-radio></div>
+        <div><el-radio v-model="state.train_data_mode" :disabled="data.doneData" label="sliding_window">Sliding window</el-radio></div>
+        <div v-if="state.train_data_mode == 'sliding_window'">
+            <sly-field title="Window size X">
+                <el-input-number 
+                    v-model="state.window_size[0]" 
+                    :min="1" 
+                    :max="1000"
+                    :disabled="data.doneData"
+                ></el-input-number>
+            </sly-field>
+            <sly-field title="Window size Y">
+                <el-input-number 
+                    v-model="state.window_size[1]" 
+                    :min="1" 
+                    :max="1000"
+                    :disabled="data.doneData"
+                ></el-input-number>
+            </sly-field>
+            <sly-field title="Window size Z">
+                <el-input-number 
+                    v-model="state.window_size[2]" 
+                    :min="1" 
+                    :max="1000"
+                    :disabled="data.doneData"
+                ></el-input-number>
+            </sly-field>
+        </div>
+    </sly-field>
+
+    <sly-field v-if="state.train_data_mode == 'full'" title="Center point clouds">
+        <sly-field title="INFO: When should point clouds be centered?"
+            description="Description"
+            style="padding-top: 0; padding-bottom: 0; margin: 10px 5px;">
+
+            <sly-icon slot="icon" :options="{ color: '#cece66', bgColor: '#f7f7eb', rounded: false }">
+                <i class="zmdi zmdi-info"></i>
+            </sly-icon>
+        </sly-field>
+        <el-checkbox v-model="state.center_coords[0]" :disabled="data.doneData">X</el-checkbox>
+        <el-checkbox v-model="state.center_coords[1]" :disabled="data.doneData">Y</el-checkbox>
+        <el-checkbox v-model="state.center_coords[2]" :disabled="data.doneData">Z</el-checkbox>
+    </sly-field>
+    <sly-field v-else title="INFO: Point clouds will be centered automatically"
+        description="Description"
+        style="padding-top: 0; padding-bottom: 0; margin: 10px 5px;">
+
+        <sly-icon slot="icon" :options="{ color: '#cece66', bgColor: '#f7f7eb', rounded: false }">
+            <i class="zmdi zmdi-info"></i>
+        </sly-icon>
+    </sly-field>
+
+    <div v-if="state.progressConvertTrain" class="mt10">
+        <div style="color: #20a0ff">
+            Converting train data to mmdet3d format: {{state.progressCurrentConvertTrain}} / {{state.progressTotalConvertTrain}}
+        </div>
+        <el-progress :percentage="state.progressPercentConvertTrain"></el-progress>
+    </div>
+
+    <div v-if="state.progressConvertVal" class="mt10">
+        <div style="color: #20a0ff">
+            Converting validation data to mmdet3d format: {{state.progressCurrentConvertVal}} / {{state.progressTotalConvertVal}}
+        </div>
+        <el-progress :percentage="state.progressPercentConvertVal"></el-progress>
+    </div>
+
+    <el-button type="primary" class="regular mt10 mr15"
+            v-if="!data.doneData"
+            :loading="state.preparingData"
+            @click="state.preparingData = true; command('prepare_data')">
+        Prepare data
+    </el-button>
+
+    <div v-if="data.doneData">
+        <i class="zmdi zmdi-check-circle ml5 mr5 mt10" style="color: #13ce66"></i>
+        <span style="color: #5a6772;">Your data has been prepared successfully.</span>
+    </div>
+
+    <el-button type="warning" class="regular mt10" :plain="true"
+               @click="state.restartFrom = 5;"
+               v-if="data.doneData && !state.started">
+        <i class="zmdi zmdi-rotate-left mr5"></i> Select other parameters
+    </el-button>
+</sly-card>

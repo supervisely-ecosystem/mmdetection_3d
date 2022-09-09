@@ -40,7 +40,7 @@
         <span style="color: #5a6772;">Selected {{state.selectedClasses.length}} classes.</span>
     </div>
     <el-button type="warning" class="regular mt10" :plain="true"
-               @click="state.restartFrom = 4;"
+               @click="state.restartFrom = 3;"
                v-if="data.doneClasses && state.selectedClasses.length > 0 && !state.started">
         <i class="zmdi zmdi-rotate-left mr5"></i> Select other classes
     </el-button>

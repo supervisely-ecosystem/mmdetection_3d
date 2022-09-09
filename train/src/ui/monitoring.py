@@ -27,9 +27,9 @@ def init(data, state):
 @g.my_app.ignore_errors_and_show_dialog_window()
 def train(api: sly.Api, task_id, context, state, app_logger):
     # cfg_path = osp.join(g.source_path, 'centerpoint_custom_config.py')
-    cfg_path = osp.join(g.configs_dir, "centerpoint", "centerpoint_01voxel_second_secfpn_dcn_circlenms_4x8_cyclic_20e_nus.py")
+    # cfg_path = osp.join(g.configs_dir, "centerpoint", "centerpoint_01voxel_second_secfpn_dcn_circlenms_4x8_cyclic_20e_nus.py")
     # cfg_path = osp.join(g.configs_dir, "pointpillars", "hv_pointpillars_secfpn_sbn-all_4x8_2x_nus-3d.py")
-    cfg = Config.fromfile(cfg_path)
+    cfg = Config.fromfile(g.model_config_local_path)
 
     dims = 4
     setup_multi_processes(cfg)
@@ -38,7 +38,7 @@ def train(api: sly.Api, task_id, context, state, app_logger):
     cfg.dataset_type = "SuperviselyDataset"
     cfg.data_root = g.project_dir
     cfg.class_names = state["selectedClasses"]
-    cfg.centerize_points = state["centerize"] # Custom parameter, [x, y, z]
+    cfg.center_coords = state["center_coords"] # Custom parameter, [x, y, z]
     if not hasattr(cfg, "runner"):
         cfg.runner = ConfigDict()
         cfg.runner.type = "EpochBasedRunner"
@@ -206,8 +206,8 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         train_cfg=cfg.get('train_cfg'),
         test_cfg=cfg.get('test_cfg'))
     
-    weights_path = osp.join(cfg.work_dir, "weights.pth")
-    checkpoint = load_checkpoint(model, weights_path, map_location='cuda:0')
+    # weights_path = osp.join(cfg.work_dir, "weights.pth")
+    checkpoint = load_checkpoint(model, g.local_weights_path, map_location='cuda:0')
     datasets = [build_dataset(cfg.data.train)]
     model.CLASSES = datasets[0].CLASSES
     train_model(

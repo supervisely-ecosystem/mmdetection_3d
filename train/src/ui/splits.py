@@ -12,10 +12,8 @@ ItemInfo = namedtuple('ItemInfo', ['dataset_name', 'name', 'img_path'])
 train_set = None
 val_set = None
 
-train_set_path = os.path.join(g.my_app.data_dir, "train.pkl")
-val_set_path = os.path.join(g.my_app.data_dir, "val.pkl")
 
-def init(project_info, project_meta: sly.ProjectMeta, data, state):
+def init(project_info, data, state):
     data["randomSplit"] = [
         {"name": "train", "type": "success"},
         {"name": "val", "type": "primary"},
@@ -55,14 +53,12 @@ def init(project_info, project_meta: sly.ProjectMeta, data, state):
     state["collapsedSplits"] = True
     state["disabledSplits"] = True
     state["point_cloud_range"] = None
-    state["centerize"] = [True, True, False] # [x, y, z]
+    state["point_cloud_dim"] = None
 
-    init_progress("ConvertTrain", state)
-    init_progress("ConvertVal", state)
-
+    init_progress("PointsRangeCalculation", state)
 
 def restart(data, state):
-    data["doneSplits"] = False
+    data["doneData"] = False
 
 
 def init_progress(index, state):
@@ -70,39 +66,6 @@ def init_progress(index, state):
     state[f"progressCurrent{index}"] = 0
     state[f"progressTotal{index}"] = None
     state[f"progressPercent{index}"] = 0
-
-
-def refresh_table():
-    global items_to_ignore
-    ignored_items_count = sum([len(ds_items) for ds_items in items_to_ignore.values()])
-    total_items_count = g.project_fs.total_items - ignored_items_count
-    train_percent = 80
-    train_count = int(total_items_count / 100 * train_percent)
-    if train_count < 1:
-        train_count = 1
-    elif g.project_info.items_count - train_count < 1:
-        train_count = g.project_info.items_count - 1
-    random_split_tab = {
-        "count": {
-            "total": total_items_count,
-            "train": train_count,
-            "val": total_items_count - train_count
-        },
-        "percent": {
-            "total": 100,
-            "train": train_percent,
-            "val": 100 - train_percent
-        },
-        "shareImagesBetweenSplits": False,
-        "sliderDisabled": False,
-    }
-
-    fields = [
-        {'field': 'state.randomSplit', 'payload': random_split_tab},
-        {'field': 'data.totalImagesCount', 'payload': total_items_count},
-    ]
-    g.api.app.set_fields(g.task_id, fields)
-
 
 
 def get_train_val_splits_by_count(train_count, val_count):
@@ -164,6 +127,42 @@ def verify_train_val_sets(train_set, val_set):
         raise ValueError("Val set is not big enough, min size is 1.")
 
 
+def calculate_pcr(items, log_step=10):
+    if len(items) < log_step:
+        log_step = len(items)
+    
+    point_cloud_range = [10000, 10000, 10000, -10000, -10000, -10000]
+    point_cloud_dim = [0, 0, 0]
+    for idx, item in enumerate(items):
+        if idx % log_step == 0:
+            fields = [
+                {"field": f"state.progressCurrentPointsRangeCalculation", "payload": idx},
+                {"field": f"state.progressPercentPointsRangeCalculation", "payload": int(idx / len(items) * 100)}
+            ]
+            g.api.app.set_fields(g.task_id, fields)
+        
+        filename = osp.join(item.dataset_name, "pointcloud", item.name)
+        pcd = o3d.io.read_point_cloud(osp.join(g.project_dir, filename))
+        pcd_np = np.asarray(pcd.points)
+        ptc_range = [
+            pcd_np[:,0].min(), 
+            pcd_np[:,1].min(), 
+            pcd_np[:,2].min(),
+            pcd_np[:,0].max(),
+            pcd_np[:,1].max(),
+            pcd_np[:,2].max()
+        ]
+        for i in range(3):
+            if ptc_range[i] < point_cloud_range[i]:
+                point_cloud_range[i] = ptc_range[i]
+            if ptc_range[i + 3] > point_cloud_range[i + 3]:
+                point_cloud_range[i + 3] = ptc_range[i + 3]
+            if ptc_range[i + 3] - ptc_range[i] > point_cloud_dim[i]:
+                point_cloud_dim[i] = ptc_range[i + 3] - ptc_range[i]
+
+    return point_cloud_range, point_cloud_dim
+
+
 @g.my_app.callback("create_splits")
 @sly.timeit
 @g.my_app.ignore_errors_and_show_dialog_window()
@@ -174,17 +173,13 @@ def create_splits(api: sly.Api, task_id, context, state, app_logger):
         api.task.set_field(task_id, "state.splitInProgress", True)
         train_set, val_set = get_train_val_sets(state)
         verify_train_val_sets(train_set, val_set)
-        
-        if train_set is not None:
-            sly.logger.info("Converting train annotations to mmdet3d format...")
-            # if not osp.exists(train_set_path): # TODO: for debug
-            save_set_to_annotation(state, train_set_path, train_set, "Train")
-        if val_set is not None:
-            sly.logger.info("Converting val annotations to mmdet3d format...")
-            #if not osp.exists(val_set_path): # TODO: for debug
-            # TODO: eval on the same boxes for debug
-            # save_set_to_annotation(state, val_set_path, val_set, "Val")
-            save_set_to_annotation(state, val_set_path, train_set, "Val")
+        pcr, pcd = calculate_pcr(train_set + val_set)
+        # TODO: change values from next step
+        fields  = [
+            {"field": "state.point_cloud_range", "payload": pcr},
+            {"field": "state.point_cloud_dim", "payload": pcd},
+        ]
+        g.api.app.set_fields(g.task_id, fields)
         step_done = True
     except Exception as e:
         train_set = None
@@ -200,119 +195,10 @@ def create_splits(api: sly.Api, task_id, context, state, app_logger):
         ]
         if step_done is True:
             fields.extend([
-                {"field": "state.collapsedMonitoring", "payload": False},
-                {"field": "state.disabledMonitoring", "payload": False},
-                {"field": "state.activeStep", "payload": 7},
+                {"field": "state.collapsedData", "payload": False},
+                {"field": "state.disabledData", "payload": False},
+                {"field": "state.activeStep", "payload": 5},
             ])
         g.api.app.set_fields(g.task_id, fields)
 
 
-def centerize_ptc(points, centerize):
-    centerize_vec = [0, 0, 0]
-    for i in range(3):
-        if centerize[i]:
-            dim_trans = points[:,i].min() + (points[:,i].max() - points[:,i].min()) * 0.5
-            points[:,i] -= dim_trans
-            centerize_vec[i] = -dim_trans
-
-    return points, centerize_vec
-
-
-def save_set_to_annotation(state, save_path, items, split_name):
-    fields = [
-        {"field": f"state.progressConvert{split_name}", "payload": True},
-        {"field": f"state.progressTotalConvert{split_name}", "payload": len(items)},
-    ]
-    g.api.app.set_fields(g.task_id, fields)
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
-
-    annotations = []
-    log_step = 10
-    frames_to_pcds = {}
-    pcds_to_frames = {}
-    if len(items) < log_step:
-        log_step = len(items)
-    
-    for idx, item in enumerate(items):
-        if idx % log_step == 0:
-            fields = [
-                {"field": f"state.progressCurrentConvert{split_name}", "payload": idx},
-                {"field": f"state.progressPercentConvert{split_name}", "payload": int(idx / len(items) * 100)}
-            ]
-            g.api.app.set_fields(g.task_id, fields)
-        ptc_info = {
-            'sample_idx': idx,
-            'lidar_points': {},
-            'annos': {
-                'gt_bboxes_3d': [],
-                'gt_names': [],
-                'gt_labels_3d': [],
-                'box_type_3d': 'LiDAR'
-            }
-        }
-        filename = osp.join(item.dataset_name, "pointcloud", item.name)
-        bin_filename = osp.join(item.dataset_name, "bin", f"{item.name}.bin")
-        os.makedirs(osp.join(g.project_dir, osp.dirname(bin_filename)), exist_ok=True)
-        pcd = o3d.io.read_point_cloud(osp.join(g.project_dir, filename))
-        pcd_np = np.asarray(pcd.points)
-        trans_vec = [0, 0, 0]
-        if any(state["centerize"]):
-            pcd_np, trans_vec = centerize_ptc(pcd_np, state["centerize"])
-        ptc_range = [
-            pcd_np[:,0].min(), 
-            pcd_np[:,1].min(), 
-            pcd_np[:,2].min(),
-            pcd_np[:,0].max(),
-            pcd_np[:,1].max(),
-            pcd_np[:,2].max()
-        ]
-        if split_name == "Train":
-            point_cloud_range = [10000, 10000, 10000, -10000, -10000, -10000]
-            for i in range(3):
-                if ptc_range[i] < point_cloud_range[i]:
-                    point_cloud_range[i] = ptc_range[i]
-                if ptc_range[i + 3] > point_cloud_range[i + 3]:
-                    point_cloud_range[i + 3] = ptc_range[i + 3]
-        intensity = np.zeros((pcd_np.shape[0], 1), dtype=np.float32)
-        pcd_np = np.hstack((pcd_np, intensity))
-        pcd_np.astype(np.float32).tofile(osp.join(g.project_dir, bin_filename))
-        ptc_info['lidar_points']['lidar_path'] = bin_filename
-
-        if item.dataset_name not in frames_to_pcds.keys():
-            frames_to_pcds[item.dataset_name] = sly.json.load_json_file(osp.join(g.project_dir, item.dataset_name, "frame_pointcloud_map.json"))
-            pcds_to_frames[item.dataset_name] = {v: k for k, v in frames_to_pcds[item.dataset_name].items()}
-
-        pcd_to_frame = pcds_to_frames[item.dataset_name]
-        frame_number = pcd_to_frame[item.name]
-        ann_path = osp.join(g.project_dir, item.dataset_name, "annotation.json")
-        ann_json = sly.json.load_json_file(ann_path)
-        # key_id_map = KeyIdMap().load_json(osp.join(g.project_dir, "key_id_map.json"))
-        ann = sly.PointcloudEpisodeAnnotation.from_json(ann_json, g.project_meta)
-        for frame in ann.frames:
-            if frame.index != int(frame_number):
-                continue
-            for fig in frame.figures:
-                if fig.video_object.obj_class.name not in state["selectedClasses"]:
-                    continue
-                ptc_info['annos']['gt_names'].append(fig.video_object.obj_class.name)
-                box_info = [] # x, y, z, dx, dy, dz, rot, [vel_x, vel_y]
-                pos = fig.geometry.position
-                # Prepare coords with centerization
-                box_pos = [pos.x + trans_vec[0], pos.y + trans_vec[1], pos.z + trans_vec[2]]
-                box_info.extend(box_pos)
-                dim = fig.geometry.dimensions
-                box_info.extend([dim.x, dim.y, dim.z])
-                box_info.extend([fig.geometry.rotation.z])
-                box_info.extend([0, 0]) # TODO: add vel
-                ptc_info['annos']['gt_bboxes_3d'].append(box_info)
-                ptc_info['annos']['gt_labels_3d'].append(state["selectedClasses"].index(fig.video_object.obj_class.name))
-        ptc_info['annos']['gt_bboxes_3d'] = np.array(ptc_info['annos']['gt_bboxes_3d'], dtype=np.float32)
-        ptc_info['annos']['gt_labels_3d'] = np.array(ptc_info['annos']['gt_labels_3d'], dtype=np.int32)
-        annotations.append(ptc_info)
-
-    g.api.app.set_field(g.task_id, f"state.progressConvert{split_name}", False)
-    if split_name == "Train":
-        g.api.app.set_field(g.task_id, f"state.point_cloud_range", point_cloud_range)
-
-    with open(save_path, 'wb') as f:
-        pkl.dump(annotations, f)
