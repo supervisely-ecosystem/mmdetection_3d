@@ -92,7 +92,7 @@
 
     <div v-if="data.doneModels">
         <i class="zmdi zmdi-check-circle ml5 mr5 mt10" style="color: #13ce66"></i>
-        <span v-if="state.weightsInitialization == 'custom'" style="color: #5a6772;">Model {{state.pretrainedModel}} (checkpoint {{state.selectedModel[state.pretrainedModel]}}) has been successfully defined.</span>
+        <span style="color: #5a6772;">Model {{state.pretrainedModel}} (checkpoint {{state.selectedModel[state.pretrainedModel]}}) has been successfully defined.</span>
     </div>
 
     <el-button type="warning" class="regular mt10" :plain="true"

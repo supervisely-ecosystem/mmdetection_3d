@@ -175,11 +175,6 @@ def create_splits(api: sly.Api, task_id, context, state, app_logger):
         verify_train_val_sets(train_set, val_set)
         pcr, pcd = calculate_pcr(train_set + val_set)
         # TODO: change values from next step
-        fields  = [
-            {"field": "state.point_cloud_range", "payload": pcr},
-            {"field": "state.point_cloud_dim", "payload": pcd},
-        ]
-        g.api.app.set_fields(g.task_id, fields)
         step_done = True
     except Exception as e:
         train_set = None
@@ -198,6 +193,8 @@ def create_splits(api: sly.Api, task_id, context, state, app_logger):
                 {"field": "state.collapsedData", "payload": False},
                 {"field": "state.disabledData", "payload": False},
                 {"field": "state.activeStep", "payload": 5},
+                {"field": "state.point_cloud_range", "payload": pcr},
+                {"field": "state.point_cloud_dim", "payload": pcd}
             ])
         g.api.app.set_fields(g.task_id, fields)
 

@@ -17,7 +17,7 @@ def init(data, state):
     state["collapsedData"] = True
     state["disabledData"] = True
     state["center_coords"] = [True, True, True] # [x, y, z]
-    state["window_size"] = [100, 100, 20]
+    state["window_size"] = [100.0, 100.0, 20.0]
     state["train_data_mode"] = "full"
 
     init_progress("ConvertTrain", state)
@@ -58,7 +58,7 @@ def save_set_to_annotation(state, save_path, items, split_name, slide_boxes):
     frames_to_pcds = {}
     pcds_to_frames = {}
     if len(items) < log_step:
-        log_step = len(items)
+        log_step = 1
 
     for idx, item in enumerate(items):
         if idx % log_step == 0:
@@ -166,11 +166,11 @@ def save_set_to_annotation(state, save_path, items, split_name, slide_boxes):
 
 
 def get_slide_boxes(state):
-    pcd = state["point_cloud_dim"]
-    ws = state["window_size"]
-    # TODO: maybe better decrease ws? user can't specify real ptc range
-    assert pcd[0] >= ws[0] and pcd[1] >= ws[1] and pcd[2] >= ws[2], \
-        "Window size in sliding window must be <= point cloud size." 
+    pcd = state["point_cloud_dim"].copy()
+    ws = state["window_size"].copy()
+    for i in range(3):
+        if pcd[i] < ws[i]:
+            ws[i] = pcd[i]
 
     slides_x, overlap_x = divmod(pcd[0], ws[0])
     slides_y, overlap_y = divmod(pcd[1], ws[1])
@@ -194,7 +194,7 @@ def get_slide_boxes(state):
                     0 if z == 0 else ws[2] * z - overlap_z,
                     ws[2] if z == 0 else ws[2] * (z + 1) - overlap_z,
                 ])
-    return sboxes
+    return sboxes, ws
 
 @g.my_app.callback("prepare_data")
 @sly.timeit
@@ -202,7 +202,7 @@ def get_slide_boxes(state):
 def prepare_data(api: sly.Api, task_id, context, state, app_logger):
     
     if state["train_data_mode"] == 'sliding_window':
-        sboxes = get_slide_boxes(state)
+        sboxes, state["window_size"] = get_slide_boxes(state)
         pcr = [
             -state["window_size"][0] * 0.5, 
             -state["window_size"][1] * 0.5, 
@@ -212,7 +212,6 @@ def prepare_data(api: sly.Api, task_id, context, state, app_logger):
             state["window_size"][2] * 0.5
         ]
     elif state["train_data_mode"] == 'full':
-        # TODO: fix pcr for center_coords different values
         sboxes = [[
             0, state["point_cloud_dim"][0],
             0, state["point_cloud_dim"][1],
@@ -221,10 +220,10 @@ def prepare_data(api: sly.Api, task_id, context, state, app_logger):
         if any(state["center_coords"]):
             pcr = [
                 -state["point_cloud_dim"][0] * 0.5 if state["center_coords"][0] else state["point_cloud_range"][0], 
-                -state["point_cloud_dim"][1] * 0.5 if state["center_coords"][0] else state["point_cloud_range"][1], 
-                -state["point_cloud_dim"][2] * 0.5 if state["center_coords"][1] else state["point_cloud_range"][2], 
-                state["point_cloud_dim"][0] * 0.5 if state["center_coords"][1] else state["point_cloud_range"][3],
-                state["point_cloud_dim"][1] * 0.5 if state["center_coords"][2] else state["point_cloud_range"][4],
+                -state["point_cloud_dim"][1] * 0.5 if state["center_coords"][1] else state["point_cloud_range"][1], 
+                -state["point_cloud_dim"][2] * 0.5 if state["center_coords"][2] else state["point_cloud_range"][2], 
+                state["point_cloud_dim"][0] * 0.5 if state["center_coords"][0] else state["point_cloud_range"][3],
+                state["point_cloud_dim"][1] * 0.5 if state["center_coords"][1] else state["point_cloud_range"][4],
                 state["point_cloud_dim"][2] * 0.5 if state["center_coords"][2] else state["point_cloud_range"][5]
             ]
         else:
