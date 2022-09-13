@@ -40,8 +40,6 @@ def use_classes(api: sly.Api, task_id, context, state, app_logger):
     global selected_classes
     selected_classes = state["selectedClasses"]
 
-    sly.logger.info(f"Project data: {g.project_fs.total_items} point clouds")
-
     fields = [
         {"field": "state.selectedClasses", "payload": state["selectedClasses"]},
         {"field": "data.doneClasses", "payload": True},

@@ -128,7 +128,7 @@ def eval_map_recall(pred, gt, ovthresh=None):
 
 def outdoor_eval(gt_annos,
                  dt_annos,
-                 metric,
+                 iou_thr,
                  label2cat,
                  logger=None,
                  box_type_3d=None,
@@ -177,13 +177,13 @@ def outdoor_eval(gt_annos,
                 gt[label][img_id] = []
             gt[label][img_id].append(bbox)
 
-    rec, prec, ap = eval_map_recall(pred, gt, metric)
+    rec, prec, ap = eval_map_recall(pred, gt, iou_thr)
     ret_dict = dict()
     header = ['classes']
     table_columns = [[label2cat[label]
                       for label in ap[0].keys()] + ['Overall']]
 
-    for i, iou_thresh in enumerate(metric):
+    for i, iou_thresh in enumerate(iou_thr):
         header.append(f'AP_{iou_thresh:.2f}')
         header.append(f'AR_{iou_thresh:.2f}')
         rec_list = []

@@ -23,86 +23,86 @@
 
     <div v-if="state.augsTemplateName != 'No Augmentations'">
         <sly-field title="Global scene rotation">
-            <div>Rotation range min</div>
+            <div class="mt5">Rotation range min</div>
             <el-input-number 
                 v-model="state.selectedAugs.global_rot_range[0]" 
                 :min="-3.141592" 
                 :max="3.141592"
                 :step="0.001"
-                :disabled="data.doneData"
+                :disabled="data.doneAugs"
             ></el-input-number>
-            <div>Rotation range max</div>
+            <div class="mt5">Rotation range max</div>
             <el-input-number 
                 v-model="state.selectedAugs.global_rot_range[1]" 
                 :min="-3.141592" 
                 :max="3.141592"
                 :step="0.001"
-                :disabled="data.doneData"
+                :disabled="data.doneAugs"
             ></el-input-number>
         </sly-field>
 
         <sly-field title="Global scene translation">
-            <div>Translation std X</div>
+            <div class="mt5">Translation std X</div>
             <el-input-number 
                 v-model="state.selectedAugs.global_translation_std[0]" 
                 :min="-10000" 
                 :max="10000"
                 :step="0.01"
-                :disabled="data.doneData"
+                :disabled="data.doneAugs"
             ></el-input-number>
-            <div>Translation std Y</div>
+            <div class="mt5">Translation std Y</div>
             <el-input-number 
                 v-model="state.selectedAugs.global_translation_std[1]" 
                 :min="-10000" 
                 :max="10000"
                 :step="0.01"
-                :disabled="data.doneData"
+                :disabled="data.doneAugs"
             ></el-input-number>
-            <div>Translation std Z</div>
+            <div class="mt5">Translation std Z</div>
             <el-input-number 
                 v-model="state.selectedAugs.global_translation_std[2]" 
                 :min="-10000" 
                 :max="10000"
                 :step="0.01"
-                :disabled="data.doneData"
+                :disabled="data.doneAugs"
             ></el-input-number>
         </sly-field>
 
         <sly-field title="Global scene scale">
-            <div>Scale range min</div>
+            <div class="mt5">Scale range min</div>
             <el-input-number 
                 v-model="state.selectedAugs.global_scale_range[0]" 
                 :min="0" 
                 :max="100"
                 :step="0.001"
-                :disabled="data.doneData"
+                :disabled="data.doneAugs"
             ></el-input-number>
-            <div>Scale range max</div>
+            <div class="mt5">Scale range max</div>
             <el-input-number 
                 v-model="state.selectedAugs.global_scale_range[1]" 
                 :min="0" 
                 :max="100"
                 :step="0.001"
-                :disabled="data.doneData"
+                :disabled="data.doneAugs"
             ></el-input-number>
         </sly-field>
 
         <sly-field title="Random Flip 3D">
-            <div>Horizontal flip probability</div>
+            <div class="mt5">Horizontal flip probability</div>
             <el-input-number 
                 v-model="state.selectedAugs.flip_horizontal" 
                 :min="0" 
                 :max="1"
                 :step="0.001"
-                :disabled="data.doneData"
+                :disabled="data.doneAugs"
             ></el-input-number>
-            <div>Vertical flip probability</div>
+            <div class="mt5">Vertical flip probability</div>
             <el-input-number 
                 v-model="state.selectedAugs.flip_vertical" 
                 :min="0" 
                 :max="1"
                 :step="0.001"
-                :disabled="data.doneData"
+                :disabled="data.doneAugs"
             ></el-input-number>
         </sly-field>
     </div>

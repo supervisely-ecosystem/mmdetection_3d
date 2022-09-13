@@ -26,10 +26,12 @@ def download(api: sly.Api, task_id, context, state, app_logger):
             sly.download_pointcloud_episode_project(g.api, g.project_id, g.project_dir, dataset_ids=None, download_realated_images=False, log_progress=True)
 
         g.project_fs = sly.PointcloudEpisodeProject(g.project_dir, sly.OpenMode.READ)
+
+        sly.logger.info(f"Project data: {g.project_fs.total_items} point clouds")
     except Exception as e:
         reset_progress(progress_index)
         raise e
-
+        
     fields = [
         {"field": "data.doneProject", "payload": True},
         {"field": "state.collapsedModels", "payload": False},

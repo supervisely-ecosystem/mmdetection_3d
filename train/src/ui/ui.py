@@ -4,7 +4,7 @@ import input_project
 import models
 import classes
 import splits
-import data_preparation as data
+import data_preparation
 import augs
 import params
 import monitoring
@@ -18,7 +18,7 @@ def init(data, state):
     models.init(data, state)
     classes.init(g.api, data, state, g.project_id, g.project_meta)
     splits.init(g.project_info, data, state)
-    data.init(data, state)
+    data_preparation.init(data, state)
     augs.init(data, state)
     params.init(data, state)
     monitoring.init(data, state)
@@ -52,9 +52,9 @@ def restart(api: sly.Api, task_id, context, state, app_logger):
     
     if restart_from_step <= 5:
         if restart_from_step == 5:
-            data.restart(data, state)
+            data_preparation.restart(data, state)
         else:
-            data.init(data, state)
+            data_preparation.init(data, state)
     
     if restart_from_step <= 6:
         if restart_from_step == 6:

@@ -19,6 +19,8 @@ def init(data, state):
     state["center_coords"] = [True, True, True] # [x, y, z]
     state["window_size"] = [100.0, 100.0, 20.0]
     state["train_data_mode"] = "full"
+    state["finalLenTrain"] = 0
+    state["finalLenVal"] = 0
 
     init_progress("ConvertTrain", state)
     init_progress("ConvertVal", state)
@@ -93,7 +95,6 @@ def save_set_to_annotation(state, save_path, items, split_name, slide_boxes):
         frame_number = pcd_to_frame[item.name]
         ann_path = osp.join(g.project_dir, item.dataset_name, "annotation.json")
         ann_json = sly.json.load_json_file(ann_path)
-        # key_id_map = KeyIdMap().load_json(osp.join(g.project_dir, "key_id_map.json"))
         ann = sly.PointcloudEpisodeAnnotation.from_json(ann_json, g.project_meta)
         for frame in ann.frames:
             if frame.index != int(frame_number):
@@ -159,7 +160,11 @@ def save_set_to_annotation(state, save_path, items, split_name, slide_boxes):
                 ptc_info['annos']['gt_labels_3d'] = np.array(ptc_info['annos']['gt_labels_3d'], dtype=np.int32)
                 annotations.append(ptc_info)
 
-    g.api.app.set_field(g.task_id, f"state.progressConvert{split_name}", False)
+    fields = [
+        {"field": f"state.progressConvert{split_name}", "payload": False},
+        {"field": f"state.finalLen{split_name}", "payload": len(annotations)}
+    ]
+    g.api.app.set_fields(g.task_id, fields)
         
     with open(save_path, 'wb') as f:
         pkl.dump(annotations, f)
@@ -200,7 +205,6 @@ def get_slide_boxes(state):
 @sly.timeit
 @g.my_app.ignore_errors_and_show_dialog_window()
 def prepare_data(api: sly.Api, task_id, context, state, app_logger):
-    
     if state["train_data_mode"] == 'sliding_window':
         sboxes, state["window_size"] = get_slide_boxes(state)
         pcr = [
@@ -231,13 +235,9 @@ def prepare_data(api: sly.Api, task_id, context, state, app_logger):
     g.api.app.set_field(g.task_id, f"state.point_cloud_range", pcr)
     if splits.train_set is not None:
         sly.logger.info("Converting train annotations to mmdet3d format...")
-        # if not osp.exists(train_set_path): # TODO: for debug
         save_set_to_annotation(state, train_set_path, splits.train_set, "Train", sboxes)
     if splits.val_set is not None:
         sly.logger.info("Converting val annotations to mmdet3d format...")
-        #if not osp.exists(val_set_path): # TODO: for debug
-        # TODO: eval on the same boxes for debug
-        # save_set_to_annotation(state, val_set_path, val_set, "Val")
         save_set_to_annotation(state, val_set_path, splits.val_set, "Val", sboxes)
     fields = [
         {"field": "state.preparingData", "payload": False},

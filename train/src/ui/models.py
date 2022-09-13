@@ -43,9 +43,6 @@ def init(data, state):
     data["doneModels"] = False
     state["loadingModel"] = False
 
-    # TODO: default hyperparams that may be reassigned from model default params
-    # init_dc.init_default_cfg_args(state)
-
     ProgressBar(g.task_id, g.api, "data.progressWeights", "Download weights", is_size=True,
                                 min_report_percent=5).init_data(data)
 
@@ -201,9 +198,6 @@ def download_weights(api: sly.Api, task_id, context, state, app_logger):
         cfg.pretrained_model = state["pretrainedModel"]
 
     # print(f'Initial config:\n{cfg.pretty_text}') # TODO: debug
-    # TODO:
-    # params = init_dc.rewrite_default_cfg_args(cfg, state)
-    # fields.extend(params)
 
     g.api.app.set_fields(g.task_id, fields)
 

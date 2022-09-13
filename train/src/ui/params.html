@@ -1,0 +1,347 @@
+<sly-card title="Training hyperparameters"
+          :options="{collapsable: true}"
+          :collapsed.sync="state.collapsedParams"
+          :disabled="{disabled: state.disabledParams, message: 'Finish previous steps before configure training'}"
+          ref="step7"
+>
+    <el-tabs type="border-card" class="el-tabs-cards" v-model="state.currentTab">
+        <el-tab-pane label="General" name="general">
+            <sly-field title="Device"
+                       description="Run nvidia-smi or check agent page to see how many devices your machine has or keep by default">
+                <el-select v-model="state.gpusId" :disabled="true">
+                    <el-option key="cuda:0" label="cuda:0" value="cuda:0"></el-option>
+                </el-select>
+            </sly-field>
+            <sly-field title="Random Seed">
+                <el-input-number v-model="state.randomSeed" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field title="Number of epochs">
+                <el-input-number v-model="state.epochs" :min="1" :max="10000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+
+            <sly-field title="Batch size per GPU"
+               description="number of samples for a single GPU">
+                <el-input-number v-model="state.batchSizePerGPU" :min="1" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field title="Number of workers per GPU"
+                       description="Maximum number of dataloader workers, use 0 for debug">
+                <el-input-number v-model="state.workersPerGPU" :min="0" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field title="Validation interval"
+               description="By default we evaluate the model on the validation set after each epoch, you can change the evaluation interval">
+                <div class="fflex">
+                    <span class="mr5">Evaluate validation set every </span>
+                    <el-input-number v-model="state.valInterval" :min="1" :max="state.epochs" :disabled="data.doneParams"></el-input-number>
+                    <span class="ml5">epochs</span>
+                </div>
+            </sly-field>
+            <sly-field title="Logging frequency"
+               description="How often metrics should be logged, increase if training data is small (by iterations).">
+                <div class="fflex">
+                    <span class="mr5">Log metrics every </span>
+                    <el-input-number v-model="state.logConfigInterval" :min="1" :disabled="data.doneParams"></el-input-number>
+                    <span class="ml5">iterations</span>
+                </div>
+            </sly-field>
+        </el-tab-pane>
+        <el-tab-pane label="Checkpoints" name="checkpoints">
+            <sly-field title="Checkpoints interval"
+               description="Save checkpoints periodically">
+                <div class="fflex">
+                    <span class="mr5">Save checkpoint every</span>
+                    <el-input-number v-model="state.checkpointInterval"
+                                     :min="1" :max="state.epochs" :disabled="data.doneParams">
+                    </el-input-number>
+                    <span class="ml5">epochs</span>
+                </div>
+            </sly-field>
+
+            <sly-field title="Checkpoints save count"
+                       description="The maximum checkpoints to keep. In some cases we want only the latest few checkpoints and would
+                                    like to delete old ones to save the disk space. If option is disabled then it means unlimited.">
+                <div class="mb5">
+                    <el-switch v-model="state.maxKeepCkptsEnabled"
+                               on-color="#13ce66" off-color="#B8B8B8"
+                               :disabled="data.doneParams">
+                    </el-switch>
+                </div>
+                <el-input-number v-if="state.maxKeepCkptsEnabled"
+                                 v-model="state.maxKeepCkpts"
+                                 :disabled="!state.maxKeepCkptsEnabled || data.doneParams"
+                                 :min="1">
+                </el-input-number>
+                <el-input v-if="!state.maxKeepCkptsEnabled" placeholder="unlimited" :disabled="true" style="width: 180px;"></el-input>
+            </sly-field>
+
+            <sly-field title="Save last checkpoint"
+                       description="Whether to force the last checkpoint to be saved regardless of interval">
+                <el-switch v-model="state.saveLast"
+                           on-color="#13ce66" off-color="#B8B8B8"
+                           :disabled="data.doneParams">
+                </el-switch>
+            </sly-field>
+            <sly-field title="Save best checkpoint"
+                       description="Best checkpoint will be marked with prefix 'best_'">
+                <el-switch v-model="state.saveBest"
+                           on-color="#13ce66" off-color="#B8B8B8"
+                           :disabled="data.doneParams">
+                </el-switch>
+            </sly-field>
+        </el-tab-pane>
+        <el-tab-pane label="Optimizer (Advanced)" name="optimizer">
+            <sly-field title="Optimizer">
+                <div slot="description">
+                    Choose optimizer and its settings, learn more in official
+                    <a href="https://pytorch.org/docs/1.11.0/optim.html#algorithms" target="_blank">
+                        pytorch documentation
+                    </a>
+                </div>
+                <el-select class=mt10 v-model="state.optimizer" :disabled="data.doneParams">
+                    <el-option key="SGD" label="SGD" value="SGD"></el-option>
+                    <el-option key="Adam" label="Adam" value="Adam"></el-option>
+                    <el-option key="Adamax" label="Adamax" value="Adamax"></el-option>
+                    <el-option key="AdamW" label="AdamW" value="Adamax"></el-option>
+                    <el-option key="NAdam" label="NAdam" value="NAdam"></el-option>
+                    <el-option key="RAdam" label="RAdam" value="RAdam"></el-option>
+                </el-select>
+            </sly-field>
+            <sly-field title="Learning rate">
+                <el-input-number v-model="state.lr" :min="0" :step="0.000001" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="state.optimizer === 'SGD'" title="Momentum">
+                <el-input-number v-model="state.momentum" :min="0" :step="0.01" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field title="Weight decay">
+                <el-input-number v-model="state.weightDecay" :min="0" :step="0.00001" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="state.optimizer === 'SGD'" title="Nesterov">
+                <el-switch v-model="state.nesterov" on-color="#13ce66" off-color="#B8B8B8" :disabled="data.doneParams"></el-switch>
+            </sly-field>
+            <sly-field v-if="['Adam', 'Adamax', 'AdamW', 'NAdam', 'RAdam'].includes(state.optimizer)" title="Beta 1">
+                <el-input-number v-model="state.beta1" :min="0" :max="1" :step="0.00001" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['Adam', 'Adamax', 'AdamW', 'NAdam', 'RAdam'].includes(state.optimizer)" title="Beta 2">
+                <el-input-number v-model="state.beta2" :min="0" :max="1" :step="0.00001" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['Adam', 'AdamW'].includes(state.optimizer)" title="Amsgrad">
+                <el-switch v-model="state.amsgrad" on-color="#13ce66" off-color="#B8B8B8" :disabled="data.doneParams"></el-switch>
+            </sly-field>
+            <sly-field v-if="state.optimizer === 'NAdam'" title="Momentum decay">
+                <el-input-number v-model="state.momentumDecay" :min="0" :step="0.00001" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+
+            <sly-field title="Clip gradient norm">
+                <el-switch v-model="state.gradClipEnabled" on-color="#13ce66" off-color="#B8B8B8" :disabled="data.doneParams"></el-switch>
+                <div class="fflex mt10">
+                    <div class="mr5">max_norm =</div>
+                    <el-input-number :disabled="!state.gradClipEnabled || data.doneParams"
+                                     v-model="state.maxNorm" :min="0" :step="0.01" :debounce="1000">
+                    </el-input-number>
+                </div>
+            </sly-field>
+        </el-tab-pane>
+
+        <!--
+        <el-tab-pane label="Losses and metrics (Advanced)" name="losses">
+            <sly-field title="Use class weights">
+                <el-switch v-model="state.useClassWeights" on-color="#13ce66" off-color="#B8B8B8" :disabled="data.doneParams"></el-switch>
+            </sly-field>
+            <sly-field v-if="state.useClassWeights" title="Manual class weights" description="Provide class weights for each class (floats splitted by comma)">
+                <div>Selected classes order: ( <span v-if="state.selectedClasses.includes(class_name)" v-for="class_name in data.classesList" style="font-style: italic;">{{class_name}} </span><span style="font-style: italic;">__bg__</span> )</div>
+                <el-input v-model="state.classWeights" placeholder="1.2,0.4,0.3"  :debounce="1000" :disabled="data.doneParams"></el-input>
+            </sly-field>
+        </el-tab-pane>
+        -->
+        
+        <el-tab-pane label="Learning rate scheduler (Advanced)" name="lr_scheduler">
+            <div class="mb10">
+                Choose LR scheduler and its settings, learn more in
+                <a href="https://github.com/open-mmlab/mmcv/blob/master/mmcv/runner/hooks/lr_updater.py" target="_blank">
+                    mmcv implementation
+                </a>
+            </div>
+            <sly-field title="By epoch"
+                   description="Do step of LR scheduler by epochs or by iterations if selected OFF">
+                <el-switch v-model="state.schedulerByEpochs" on-color="#13ce66" off-color="#B8B8B8" :disabled="data.doneParams"></el-switch>
+            </sly-field>
+            <sly-field title="INFO: By epoch"
+                   description="Cyclic and OneCycle LR policies will not be able to use when 'by epoch' chosen."
+                   style="padding-top: 0; padding-bottom: 0; margin: 10px 5px;">
+
+                <sly-icon slot="icon" :options="{ color: '#cece66', bgColor: '#f7f7eb', rounded: false }">
+                    <i class="zmdi zmdi-info"></i>
+                </sly-icon>
+            </sly-field>
+            <sly-field title="LR Scheduler policy">
+                <el-select v-model="state.lrPolicy" :disabled="data.doneParams">
+                    <el-option v-if="!state.schedulerByEpochs || (state.schedulerByEpochs && !['Cyclic', 'OneCycle'].includes(policy))"
+                               v-for="(policy, policy_ind) in state.availableLrPolicy" :key="policy"
+                               :label="data.fullPolicyNames[policy_ind]" :value="policy"></el-option>
+                </el-select>
+            </sly-field>
+            <sly-field v-if="state.lrPolicy === 'Step'" title="LR sheduler step" description="Decay LR interval">
+                <el-input-number v-model="state.lr_step" :min="1" :step="1" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['Exp', 'Step', 'Inv'].includes(state.lrPolicy)" title="Gamma" description="Decay LR ratio">
+                <el-input-number v-model="state.gamma" :min="0.00001" :step="0.00001" :max="1" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['FlatCosineAnnealing'].includes(state.lrPolicy)" title="Start percent">
+                <el-input-number v-model="state.startPercent" :min="0" :step="0.01" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['CosineRestart'].includes(state.lrPolicy)" title="Periods"
+                       description="One or many int period values for each cosine anneling cycle splitted by comma">
+                <el-input v-model="state.periods" placeholder="10,20,30"  :debounce="1000" :disabled="data.doneParams"></el-input>
+            </sly-field>
+            <sly-field v-if="['CosineRestart'].includes(state.lrPolicy)" title="Restart weights"
+                       description="One or many float restart weights values at each
+                                    restart iteration splitted by comma. Periods and restart weights should have the same length.">
+                <el-input v-model="state.restartWeights" placeholder="1,0.7,0.5" :debounce="1000" :disabled="data.doneParams"></el-input>
+            </sly-field>
+            <sly-field v-if="['Poly', 'Step', 'CosineAnnealing', 'FlatCosineAnnealing', 'CosineRestart'].includes(state.lrPolicy)" title="Min LR">
+                <el-switch v-model="state.minLREnabled" on-color="#13ce66" off-color="#B8B8B8" :disabled="data.doneParams"></el-switch>
+                <div class="fflex mt10">
+                    <div class="mr5">min LR =</div>
+                    <el-input-number :disabled="!state.minLREnabled || data.doneParams"
+                                     v-model="state.minLR" :min="0" :step="0.0000001" :debounce="1000">
+                    </el-input-number>
+                </div>
+            </sly-field>
+            <sly-field v-if="['CosineAnnealing', 'FlatCosineAnnealing', 'CosineRestart'].includes(state.lrPolicy)" title="Min LR Ratio">
+                <div class="fflex mt10">
+                    <div class="mr5">min LR Ratio =</div>
+                    <el-input-number :disabled="state.minLREnabled || data.doneParams"
+                                     v-model="state.minLRRatio" :min="0" :step="0.000001" :debounce="1000">
+                    </el-input-number>
+                </div>
+            </sly-field>
+            <sly-field v-if="['Poly', 'Inv'].includes(state.lrPolicy)" title="Power">
+                <el-input-number v-model="state.power" :min="0.000001" :step="0.000001" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['Cyclic'].includes(state.lrPolicy)" title="Target ratio of the highest LR"
+                       description="Relative ratio of the highest LR to the initial LR">
+                <el-input-number v-model="state.highestLRRatio" :min="0.000001" :step="0.000001" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['Cyclic'].includes(state.lrPolicy)" title="Target ratio of the lowest LR"
+                       description="Relative ratio of the lowest LR to the initial LR">
+                <el-input-number v-model="state.lowestLRRatio" :min="0.000001" :step="0.000001" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['Cyclic'].includes(state.lrPolicy)" title="Cyclic Times"
+                       description="Number of cycles during training">
+                <el-input-number v-model="state.cyclicTimes" :min="1" :step="1" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['Cyclic'].includes(state.lrPolicy)" title="Step Ratio Up"
+                       description="The ratio of the increasing process of
+                                    LR in the total cycle">
+                <el-input-number v-model="state.stepRatioUp" :min="0" :max="0.9999" :step="0.0001" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['Cyclic'].includes(state.lrPolicy)" title="Gamma"
+                       description="Cycle decay ratio.
+                                    It takes values in the range (0, 1]. The difference between the
+                                    maximum learning rate and the minimum learning rate decreases
+                                    periodically when it is less than 1.">
+                <el-input-number v-model="state.cyclicGamma" :min="0.000001" :step="0.000001" :max="1" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['Cyclic', 'OneCycle'].includes(state.lrPolicy)" title="Anneal strategy"
+                       description="Specifies the annealing strategy: 'cos' for cosine annealing,
+                                    'linear' for linear annealing">
+                <el-select class=mt10 v-model="state.annealStrategy" :disabled="data.doneParams">
+                    <el-option key="cos" label="cos" value="cos"></el-option>
+                    <el-option key="linear" label="linear" value="linear"></el-option>
+                </el-select>
+            </sly-field>
+            <sly-field v-if="['OneCycle'].includes(state.lrPolicy)" title="Total steps"
+                       description="The total number of steps in the cycle.
+                                    Note that if a value is not provided here, it will be the max_iter
+                                    of runner.">
+                <el-switch v-model="state.totalStepsEnabled" on-color="#13ce66" off-color="#B8B8B8" :disabled="data.doneParams"></el-switch>
+                <div class="fflex mt10">
+                    <div class="mr5">Total steps =</div>
+                    <el-input-number :disabled="!state.totalStepsEnabled || data.doneParams"
+                                     v-model="state.totalSteps" :min="1" :step="1" :debounce="1000">
+                    </el-input-number>
+                </div>
+            </sly-field>
+            <sly-field v-if="['OneCycle'].includes(state.lrPolicy)" title="Max LR"
+                       description="Upper learning rate boundaries in the cycle
+                                    for each parameter group. One or many float restart upper LR boundaries values splitted by comma">
+                <el-input :disabled="data.doneParams" placeholder="0.01,0.001,0.0001" v-model="state.maxLR" :debounce="1000">
+                </el-input>
+            </sly-field>
+            <sly-field v-if="['OneCycle'].includes(state.lrPolicy)" title="Percentage of the cycle"
+                       description="The percentage of the cycle (in number of steps)
+                                    spent increasing the learning rate.">
+                <el-input-number v-model="state.pctStart" :min="0.01" :step="0.01" :max="1" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['OneCycle'].includes(state.lrPolicy)" title="Div factor"
+                       description="Determines the initial learning rate via
+                                    initial_lr = max lr/div factor">
+                <el-input-number v-model="state.divFactor" :min="1" :step="0.001" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['OneCycle'].includes(state.lrPolicy)" title="Final div factor"
+                       description="Determines the minimum learning rate via
+                                    min_lr = initial lr/final div factor">
+                <el-input-number v-model="state.finalDivFactor" :min="1" :step="0.001" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+            </sly-field>
+            <sly-field v-if="['OneCycle'].includes(state.lrPolicy)" title="Three phases"
+                       description="If three phase is True, use a third phase of the
+                                    schedule to annihilate the learning rate according to
+                                    final div factor instead of modifying the second phase (the first
+                                    two phases will be symmetrical about the step indicated by
+                                    pct_start)">
+                <el-switch v-model="state.threePhase" on-color="#13ce66" off-color="#B8B8B8" :disabled="data.doneParams"></el-switch>
+            </sly-field>
+
+            <sly-card title="Warmup"
+                      subtitle="Warmup settings"
+                      :options="{collapsable: true}"
+                      :collapsed.sync="state.collapsedWarmup"
+                      style="box-shadow: none;"
+            >
+                <sly-field title="Use warmup">
+                    <el-switch v-model="state.useWarmup" on-color="#13ce66" off-color="#B8B8B8" :disabled="data.doneParams"></el-switch>
+                    <div class="fflex mt10" v-if="state.useWarmup">
+                        <div class="mr5">Warmup strategy:</div>
+                        <el-select class=mt10 v-model="state.warmup" :disabled="data.doneParams">
+                            <el-option key="constant" label="constant" value="constant"></el-option>
+                            <el-option key="linear" label="linear" value="linear"></el-option>
+                            <el-option key="exp" label="exp" value="exp"></el-option>
+                        </el-select>
+                    </div>
+
+                </sly-field>
+
+                <sly-field title="By epochs" v-if="state.useWarmup"
+                           description="When is True, warmup iters
+                                        means the number of epochs that warmup lasts, otherwise means the
+                                        number of iteration that warmup lasts">
+                    <el-switch v-model="state.warmupByEpoch" on-color="#13ce66" off-color="#B8B8B8" :disabled="data.doneParams"></el-switch>
+                </sly-field>
+
+                <sly-field title="Warmup iterations" v-if="state.useWarmup"
+                           description="The number of iterations or epochs that warmup lasts">
+                    <el-input-number v-model="state.warmupIters" :min="1" :step="1" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+                </sly-field>
+
+                <sly-field title="Warmup ratio" v-if="state.useWarmup"
+                           description="LR used at the beginning of warmup equals to warmup_ratio * initial_lr">
+                    <el-input-number v-model="state.warmupRatio" :min="0.0001" :step="0.0001" :max="1" :debounce="1000" :disabled="data.doneParams"></el-input-number>
+                </sly-field>
+            </sly-card>
+        </el-tab-pane>
+    </el-tabs>
+
+    <el-button type="primary" class="regular mt10"
+               @click="command('use_hyp')"
+               v-if="!data.doneParams">
+        Finish step
+    </el-button>
+    <div v-if="data.doneParams">
+        <i class="zmdi zmdi-check-circle mr5 mt10" style="color: #13ce66"></i>
+        <span style="color: #5a6772;">Hyperparameters have been successfully defined</span>
+    </div>
+    <el-button type="warning" class="regular mt10" :plain="true"
+               @click="state.restartFrom = 7;"
+               v-if="data.doneParams && !state.started">
+        <i class="zmdi zmdi-rotate-left mr5"></i> Change hyperparameters
+    </el-button>
+</sly-card>

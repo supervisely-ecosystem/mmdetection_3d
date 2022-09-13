@@ -7,7 +7,6 @@ aug_templates = [{
         'name': 'No Augmentations',
         'augs': {
             # TODO: Add PointSample / VoxelBasedPointSampler?
-            # TODO: Add ObjectNoise?
             'global_rot_range': [0., 0.],
             'global_scale_range': [1.0, 1.0],
             'global_translation_std': [0., 0., 0.],
@@ -49,7 +48,7 @@ def init(data, state):
     state["disabledAugs"] = True
     data["doneAugs"] = False
     data["augTemplates"] = aug_templates
-    state["selectedAugs"] = data["augTemplates"]['Medium']['augs'].copy()
+    state["selectedAugs"] = data["augTemplates"][2]['augs'].copy()
 
 def restart(data, state):
     data["doneAugs"] = False
@@ -60,7 +59,12 @@ def restart(data, state):
 @g.my_app.ignore_errors_and_show_dialog_window()
 def use_augs(api: sly.Api, task_id, context, state, app_logger):
     global aug_templates
-    augs = aug_templates[state["augsTemplateName"]]['augs']
+    augs = None
+    for template in aug_templates:
+        if template['name'] == state["augsTemplateName"]:
+            augs = template['augs']
+    if augs is None:
+        augs = aug_templates[0]['augs']
     g.api.app.set_field(g.task_id, "state.selectedAugs", augs)
 
 
