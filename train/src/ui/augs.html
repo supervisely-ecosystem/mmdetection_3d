@@ -1,0 +1,135 @@
+<sly-card title="Training augmentations"
+          subtitle="Choose one of the prepared templates or provide custom pipeline"
+          :options="{collapsable: true}"
+          :collapsed.sync="state.collapsedAugs"
+          :disabled="{disabled: state.disabledAugs, message: 'Prepare train/val splits at previous step before choosing augmentations'}"
+          ref="step6"
+>
+    <sly-field title="Template" description="Choose one of the prepared templates (you can modify any values as you like)">
+        <el-select 
+            v-model="state.augsTemplateName"
+            @change="command('select_template')"
+            placeholder="Select template" 
+            :disabled="data.doneAugs"
+        >
+            <el-option
+                    v-for="item in data.augTemplates"
+                    :key="item.name"
+                    :label="item.name"
+                    :value="item.name">
+            </el-option>
+        </el-select>
+    </sly-field>
+
+    <div v-if="state.augsTemplateName != 'No Augmentations'">
+        <sly-field title="Global scene rotation">
+            <div>Rotation range min</div>
+            <el-input-number 
+                v-model="state.selectedAugs.global_rot_range[0]" 
+                :min="-3.141592" 
+                :max="3.141592"
+                :step="0.001"
+                :disabled="data.doneData"
+            ></el-input-number>
+            <div>Rotation range max</div>
+            <el-input-number 
+                v-model="state.selectedAugs.global_rot_range[1]" 
+                :min="-3.141592" 
+                :max="3.141592"
+                :step="0.001"
+                :disabled="data.doneData"
+            ></el-input-number>
+        </sly-field>
+
+        <sly-field title="Global scene translation">
+            <div>Translation std X</div>
+            <el-input-number 
+                v-model="state.selectedAugs.global_translation_std[0]" 
+                :min="-10000" 
+                :max="10000"
+                :step="0.01"
+                :disabled="data.doneData"
+            ></el-input-number>
+            <div>Translation std Y</div>
+            <el-input-number 
+                v-model="state.selectedAugs.global_translation_std[1]" 
+                :min="-10000" 
+                :max="10000"
+                :step="0.01"
+                :disabled="data.doneData"
+            ></el-input-number>
+            <div>Translation std Z</div>
+            <el-input-number 
+                v-model="state.selectedAugs.global_translation_std[2]" 
+                :min="-10000" 
+                :max="10000"
+                :step="0.01"
+                :disabled="data.doneData"
+            ></el-input-number>
+        </sly-field>
+
+        <sly-field title="Global scene scale">
+            <div>Scale range min</div>
+            <el-input-number 
+                v-model="state.selectedAugs.global_scale_range[0]" 
+                :min="0" 
+                :max="100"
+                :step="0.001"
+                :disabled="data.doneData"
+            ></el-input-number>
+            <div>Scale range max</div>
+            <el-input-number 
+                v-model="state.selectedAugs.global_scale_range[1]" 
+                :min="0" 
+                :max="100"
+                :step="0.001"
+                :disabled="data.doneData"
+            ></el-input-number>
+        </sly-field>
+
+        <sly-field title="Random Flip 3D">
+            <div>Horizontal flip probability</div>
+            <el-input-number 
+                v-model="state.selectedAugs.flip_horizontal" 
+                :min="0" 
+                :max="1"
+                :step="0.001"
+                :disabled="data.doneData"
+            ></el-input-number>
+            <div>Vertical flip probability</div>
+            <el-input-number 
+                v-model="state.selectedAugs.flip_vertical" 
+                :min="0" 
+                :max="1"
+                :step="0.001"
+                :disabled="data.doneData"
+            ></el-input-number>
+        </sly-field>
+    </div>
+
+    <div v-if="state.augsTemplateName != 'No Augmentations'">
+        <div class="fflex mt10" v-if="!data.doneAugs">
+            <el-button type="primary" class="regular" @click="command('use_augs')">Use augs
+            </el-button>
+        </div>
+        <div v-if="data.doneAugs">
+            <i class="zmdi zmdi-check-circle mr5 mt10" style="color: #13ce66"></i>
+            <span style="color: #5a6772;">Augmentations have been successfully defined</span>
+        </div>
+    </div>
+    <div v-else>
+        <div class="fflex mt10" v-if="!data.doneAugs">
+            <el-button type="primary" class="regular" @click="command('use_augs')">Next step</el-button>
+        </div>
+        <div v-if="data.doneAugs">
+            <i class="zmdi zmdi-check-circle mr5 mt10" style="color: #13ce66"></i>
+            <span style="color: #5a6772;">You choose training without augmentations</span>
+        </div>
+    </div>
+    <el-button type="warning" class="regular mt10" :plain="true"
+               @click="state.restartFrom = 6;"
+               v-if="data.doneAugs && !state.started">
+        <i class="zmdi zmdi-rotate-left mr5"></i> Change augmentations
+    </el-button>
+
+</sly-card>

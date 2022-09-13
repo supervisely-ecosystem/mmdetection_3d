@@ -25,7 +25,7 @@ def init(data, state):
 
 
 def restart(data, state):
-    data["doneSplits"] = False
+    data["doneData"] = False
 
 
 def init_progress(index, state):
@@ -238,13 +238,13 @@ def prepare_data(api: sly.Api, task_id, context, state, app_logger):
         #if not osp.exists(val_set_path): # TODO: for debug
         # TODO: eval on the same boxes for debug
         # save_set_to_annotation(state, val_set_path, val_set, "Val")
-        save_set_to_annotation(state, val_set_path, splits.train_set, "Val", sboxes)
+        save_set_to_annotation(state, val_set_path, splits.val_set, "Val", sboxes)
     fields = [
         {"field": "state.preparingData", "payload": False},
         {"field": "data.doneData", "payload": True},
-        {"field": "state.collapsedMonitoring", "payload": False},
-        {"field": "state.disabledMonitoring", "payload": False},
-        {"field": "state.activeStep", "payload": 7},
+        {"field": "state.collapsedAugs", "payload": False},
+        {"field": "state.disabledAugs", "payload": False},
+        {"field": "state.activeStep", "payload": 6},
     ]
 
     g.api.app.set_fields(g.task_id, fields)

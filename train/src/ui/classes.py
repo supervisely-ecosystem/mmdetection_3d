@@ -47,7 +47,7 @@ def use_classes(api: sly.Api, task_id, context, state, app_logger):
         {"field": "data.doneClasses", "payload": True},
         {"field": "state.collapsedSplits", "payload": False},
         {"field": "state.disabledSplits", "payload": False},
-        {"field": "state.activeStep", "payload": 5},
+        {"field": "state.activeStep", "payload": 4},
     ]
     g.api.app.set_fields(g.task_id, fields)
 

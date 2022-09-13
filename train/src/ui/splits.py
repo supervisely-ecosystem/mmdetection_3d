@@ -58,7 +58,7 @@ def init(project_info, data, state):
     init_progress("PointsRangeCalculation", state)
 
 def restart(data, state):
-    data["doneData"] = False
+    data["doneSplits"] = False
 
 
 def init_progress(index, state):
