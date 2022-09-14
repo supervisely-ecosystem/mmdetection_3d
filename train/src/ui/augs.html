@@ -1,8 +1,8 @@
 <sly-card title="Training augmentations"
-          subtitle="Choose one of the prepared templates or provide custom pipeline"
+          subtitle="Choose one of the prepared templates"
           :options="{collapsable: true}"
           :collapsed.sync="state.collapsedAugs"
-          :disabled="{disabled: state.disabledAugs, message: 'Prepare train/val splits at previous step before choosing augmentations'}"
+          :disabled="{disabled: state.disabledAugs, message: 'Finish all previous steps before choosing augmentations'}"
           ref="step6"
 >
     <sly-field title="Template" description="Choose one of the prepared templates (you can modify any values as you like)">

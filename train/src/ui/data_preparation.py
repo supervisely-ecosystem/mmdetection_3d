@@ -4,6 +4,7 @@ import numpy as np
 import open3d as o3d
 import supervisely as sly
 import sly_globals as g
+from sly_train_progress import init_progress
 import splits
 
 
@@ -30,12 +31,6 @@ def restart(data, state):
     data["doneData"] = False
 
 
-def init_progress(index, state):
-    state[f"progress{index}"] = False
-    state[f"progressCurrent{index}"] = 0
-    state[f"progressTotal{index}"] = None
-    state[f"progressPercent{index}"] = 0
-
 def centerize_ptc(points, centerize):
     centerize_vec = [0, 0, 0]
     for i in range(3):
@@ -45,6 +40,69 @@ def centerize_ptc(points, centerize):
             centerize_vec[i] = -dim_trans
 
     return points, centerize_vec
+
+
+def get_ann_in_framework_format(state, item, sample_idx, pcd_np, pcd_sboxes, sly_ann, annotations):
+    for slide_box_idx, sbox in enumerate(pcd_sboxes):
+        ptc_info = {
+            'sample_idx': sample_idx,
+            'lidar_points': {},
+            'annos': {
+                'gt_bboxes_3d': [],
+                'gt_names': [],
+                'gt_labels_3d': [],
+                'box_type_3d': 'LiDAR'
+            }
+        }
+        pcd_eps = 1e-3
+        pcd_slide = pcd_np[
+            (pcd_np[:,0] > sbox[0] - pcd_eps) &
+            (pcd_np[:,0] < sbox[1] + pcd_eps) &
+            (pcd_np[:,1] > sbox[2] - pcd_eps) &
+            (pcd_np[:,1] < sbox[3] + pcd_eps) &
+            (pcd_np[:,2] > sbox[4] - pcd_eps) &
+            (pcd_np[:,2] < sbox[5] + pcd_eps)
+        ]
+        if len(pcd_slide) == 0:
+            continue
+        slide_name = f"{item.name}_{slide_box_idx}"
+        bin_filename = osp.join(item.dataset_name, "bin", f"{slide_name}.bin")
+        trans_vec = [0, 0, 0]
+        if any(state["center_coords"]):
+            pcd_slide, trans_vec = centerize_ptc(pcd_slide, state["center_coords"])
+            
+        intensity = np.zeros((pcd_slide.shape[0], 1), dtype=np.float32)
+        pcd_slide = np.hstack((pcd_slide, intensity))
+        pcd_slide.astype(np.float32).tofile(osp.join(g.project_dir, bin_filename))
+        ptc_info['lidar_points']['lidar_path'] = bin_filename
+        for fig in sly_ann.figures:
+            if fig.video_object.obj_class.name not in state["selectedClasses"]:
+                continue
+            box_info = [] # x, y, z, dx, dy, dz, rot, [vel_x, vel_y]
+            pos = fig.geometry.position
+
+            if pos.x < sbox[0] or pos.x >= sbox[1] or \
+                pos.y < sbox[2] or pos.y >= sbox[3] or \
+                pos.z < sbox[4] or pos.z >= sbox[5]:
+                continue
+            pos_x = pos.x + trans_vec[0]
+            pos_y = pos.y + trans_vec[1]
+            pos_z = pos.z + trans_vec[2]
+
+            box_pos = [pos_x, pos_y, pos_z]
+            box_info.extend(box_pos)
+            dim = fig.geometry.dimensions
+            box_info.extend([dim.x, dim.y, dim.z])
+            box_info.extend([fig.geometry.rotation.z])
+            box_info.extend([0, 0]) # TODO: add vel
+
+            ptc_info['annos']['gt_names'].append(fig.video_object.obj_class.name)
+            ptc_info['annos']['gt_bboxes_3d'].append(box_info)
+            ptc_info['annos']['gt_labels_3d'].append(state["selectedClasses"].index(fig.video_object.obj_class.name))
+        ptc_info['annos']['gt_bboxes_3d'] = np.array(ptc_info['annos']['gt_bboxes_3d'], dtype=np.float32)
+        ptc_info['annos']['gt_labels_3d'] = np.array(ptc_info['annos']['gt_labels_3d'], dtype=np.int32)
+        annotations.append(ptc_info)
+    return annotations
 
 
 def save_set_to_annotation(state, save_path, items, split_name, slide_boxes):
@@ -71,8 +129,7 @@ def save_set_to_annotation(state, save_path, items, split_name, slide_boxes):
             g.api.app.set_fields(g.task_id, fields)
         
         os.makedirs(osp.join(g.project_dir, item.dataset_name, "bin"), exist_ok=True)
-        filename = osp.join(item.dataset_name, "pointcloud", item.name)
-        pcd = o3d.io.read_point_cloud(osp.join(g.project_dir, filename))
+        pcd = o3d.io.read_point_cloud(item.img_path)
         pcd_np = np.asarray(pcd.points)
 
         pcd_sboxes = []
@@ -87,78 +144,25 @@ def save_set_to_annotation(state, save_path, items, split_name, slide_boxes):
                 pcd_np[:,2].min() + (pcd_np[:,2].max() - pcd_np[:,2].min()) * 0.5 - pcdim[2] * 0.5 + sbox[5]
             ])
 
-        if item.dataset_name not in frames_to_pcds.keys():
-            frames_to_pcds[item.dataset_name] = sly.json.load_json_file(osp.join(g.project_dir, item.dataset_name, "frame_pointcloud_map.json"))
-            pcds_to_frames[item.dataset_name] = {v: k for k, v in frames_to_pcds[item.dataset_name].items()}
+        if g.project_type == str(sly.ProjectType.POINT_CLOUD_EPISODES):
+            if item.dataset_name not in frames_to_pcds.keys():
+                frames_to_pcds[item.dataset_name] = sly.json.load_json_file(osp.join(g.project_dir, item.dataset_name, "frame_pointcloud_map.json"))
+                pcds_to_frames[item.dataset_name] = {v: k for k, v in frames_to_pcds[item.dataset_name].items()}
 
-        pcd_to_frame = pcds_to_frames[item.dataset_name]
-        frame_number = pcd_to_frame[item.name]
-        ann_path = osp.join(g.project_dir, item.dataset_name, "annotation.json")
-        ann_json = sly.json.load_json_file(ann_path)
-        ann = sly.PointcloudEpisodeAnnotation.from_json(ann_json, g.project_meta)
-        for frame in ann.frames:
-            if frame.index != int(frame_number):
-                continue
-            
-            for slide_box_idx, sbox in enumerate(pcd_sboxes):
-                ptc_info = {
-                    'sample_idx': idx,
-                    'lidar_points': {},
-                    'annos': {
-                        'gt_bboxes_3d': [],
-                        'gt_names': [],
-                        'gt_labels_3d': [],
-                        'box_type_3d': 'LiDAR'
-                    }
-                }
-                pcd_eps = 1e-3
-                pcd_slide = pcd_np[
-                    (pcd_np[:,0] > sbox[0] - pcd_eps) &
-                    (pcd_np[:,0] < sbox[1] + pcd_eps) &
-                    (pcd_np[:,1] > sbox[2] - pcd_eps) &
-                    (pcd_np[:,1] < sbox[3] + pcd_eps) &
-                    (pcd_np[:,2] > sbox[4] - pcd_eps) &
-                    (pcd_np[:,2] < sbox[5] + pcd_eps)
-                ]
-                if len(pcd_slide) == 0:
+            pcd_to_frame = pcds_to_frames[item.dataset_name]
+            frame_number = pcd_to_frame[item.name]
+            ann_path = osp.join(g.project_dir, item.dataset_name, "annotation.json")
+            ann_json = sly.json.load_json_file(ann_path)
+            ann = sly.PointcloudEpisodeAnnotation.from_json(ann_json, g.project_meta)
+            for frame in ann.frames:
+                if frame.index != int(frame_number):
                     continue
-                slide_name = f"{item.name}_{slide_box_idx}"
-                bin_filename = osp.join(item.dataset_name, "bin", f"{slide_name}.bin")
-                trans_vec = [0, 0, 0]
-                if any(state["center_coords"]):
-                    pcd_slide, trans_vec = centerize_ptc(pcd_slide, state["center_coords"])
-                 
-                intensity = np.zeros((pcd_slide.shape[0], 1), dtype=np.float32)
-                pcd_slide = np.hstack((pcd_slide, intensity))
-                pcd_slide.astype(np.float32).tofile(osp.join(g.project_dir, bin_filename))
-                ptc_info['lidar_points']['lidar_path'] = bin_filename
-                for fig in frame.figures:
-                    if fig.video_object.obj_class.name not in state["selectedClasses"]:
-                        continue
-                    box_info = [] # x, y, z, dx, dy, dz, rot, [vel_x, vel_y]
-                    pos = fig.geometry.position
-
-                    if pos.x < sbox[0] or pos.x >= sbox[1] or \
-                        pos.y < sbox[2] or pos.y >= sbox[3] or \
-                        pos.z < sbox[4] or pos.z >= sbox[5]:
-                        continue
-                    pos_x = pos.x + trans_vec[0]
-                    pos_y = pos.y + trans_vec[1]
-                    pos_z = pos.z + trans_vec[2]
-
-                    box_pos = [pos_x, pos_y, pos_z]
-                    box_info.extend(box_pos)
-                    dim = fig.geometry.dimensions
-                    box_info.extend([dim.x, dim.y, dim.z])
-                    box_info.extend([fig.geometry.rotation.z])
-                    box_info.extend([0, 0]) # TODO: add vel
-
-                    ptc_info['annos']['gt_names'].append(fig.video_object.obj_class.name)
-                    ptc_info['annos']['gt_bboxes_3d'].append(box_info)
-                    ptc_info['annos']['gt_labels_3d'].append(state["selectedClasses"].index(fig.video_object.obj_class.name))
-                ptc_info['annos']['gt_bboxes_3d'] = np.array(ptc_info['annos']['gt_bboxes_3d'], dtype=np.float32)
-                ptc_info['annos']['gt_labels_3d'] = np.array(ptc_info['annos']['gt_labels_3d'], dtype=np.int32)
-                annotations.append(ptc_info)
+                annotations = get_ann_in_framework_format(state, item, idx, pcd_np, pcd_sboxes, frame, annotations)
+        elif g.project_type == str(sly.ProjectType.POINT_CLOUDS):
+            ann_path = osp.join(g.project_dir, item.dataset_name, "ann", f"{item.name}.json")
+            ann_json = sly.json.load_json_file(ann_path)
+            ann = sly.PointcloudAnnotation.from_json(ann_json, g.project_meta)
+            annotations = get_ann_in_framework_format(state, item, idx, pcd_np, pcd_sboxes, ann, annotations)
 
     fields = [
         {"field": f"state.progressConvert{split_name}", "payload": False},

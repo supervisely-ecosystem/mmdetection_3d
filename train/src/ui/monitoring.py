@@ -148,7 +148,7 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         sly.json.dump_json_file(state, os.path.join(g.info_dir, "ui_state.json"))
         
         cfg = init_cfg(state)
-        print(cfg.pretty_text) # TODO: for debug
+        # print(cfg.pretty_text) # TODO: for debug
 
         # TODO: check current existing PointShuffle in train pipeline
         # TODO: bug: save latest even if 'latest' false
@@ -159,9 +159,6 @@ def train(api: sly.Api, task_id, context, state, app_logger):
             train_cfg=cfg.get('train_cfg'),
             test_cfg=cfg.get('test_cfg'))
         
-        # weights_path = osp.join(cfg.work_dir, "weights.pth")
-        # TODO: check via 'load_from'
-        # checkpoint = load_checkpoint(model, g.local_weights_path, map_location='cuda:0')
         datasets = [build_dataset(cfg.data.train)]
         model.CLASSES = datasets[0].CLASSES
         train_model(

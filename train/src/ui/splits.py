@@ -6,6 +6,7 @@ import random
 import numpy as np
 import pickle as pkl
 from collections import namedtuple
+from sly_train_progress import init_progress
 import open3d as o3d
 
 ItemInfo = namedtuple('ItemInfo', ['dataset_name', 'name', 'img_path'])
@@ -59,13 +60,6 @@ def init(project_info, data, state):
 
 def restart(data, state):
     data["doneSplits"] = False
-
-
-def init_progress(index, state):
-    state[f"progress{index}"] = False
-    state[f"progressCurrent{index}"] = 0
-    state[f"progressTotal{index}"] = None
-    state[f"progressPercent{index}"] = 0
 
 
 def get_train_val_splits_by_count(train_count, val_count):
@@ -141,8 +135,7 @@ def calculate_pcr(items, log_step=10):
             ]
             g.api.app.set_fields(g.task_id, fields)
         
-        filename = osp.join(item.dataset_name, "pointcloud", item.name)
-        pcd = o3d.io.read_point_cloud(osp.join(g.project_dir, filename))
+        pcd = o3d.io.read_point_cloud(item.img_path)
         pcd_np = np.asarray(pcd.points)
         ptc_range = [
             pcd_np[:,0].min(), 
