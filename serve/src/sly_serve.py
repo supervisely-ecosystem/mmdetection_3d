@@ -57,6 +57,7 @@ def init_state_and_data(data, state):
                               for pretrained_model in data["pretrainedModels"].keys()}
     state["device"] = "cuda:0"
     state["weightsPath"] = ""
+    state["expandPCR"] = True
     state["loading"] = False
     state["deployed"] = False
     ProgressBar(g.task_id, g.api, "data.progressWeights", "Downloading weights", is_size=True,
@@ -95,19 +96,24 @@ def get_session_info(api: sly.Api, task_id, context, state, app_logger):
         "device": g.device,
         "session_id": task_id,
         "classes_count": len(g.meta.obj_classes),
+        "ptc_range_centered": g.ptc_range_centered,
+        "train_data_centered" : g.train_data_centered
     }
     request_id = context["request_id"]
     g.my_app.send_response(request_id, data=info)
 
 
-def _inference(api, pointcloud_id, threshold=None, selected_classes=None):
+def _inference(api, pointcloud_id, threshold=None, selected_classes=None, 
+               apply_sliding_window=None, center_ptc=None):
     local_pointcloud_path = os.path.join(g.my_app.data_dir, sly.rand_str(15) + ".pcd")
 
     api.pointcloud.download_path(pointcloud_id, local_pointcloud_path)
 
     result = utils.inference_model(g.model, local_pointcloud_path,
-                                       thresh=threshold if threshold is not None else 0.3,
-                                       selected_classes=selected_classes)
+                                    thresh=threshold if threshold is not None else 0.3,
+                                    selected_classes=selected_classes, 
+                                    apply_sw=apply_sliding_window,
+                                    center_ptc=center_ptc)
     sly.fs.silent_remove(local_pointcloud_path)
     return result
 
@@ -172,7 +178,14 @@ class Annotation:
 def inference_pointcloud_id(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
     try:
-        raw_result = _inference(api, state["pointcloud_id"], state.get("threshold"), state.get("classes", None))
+        raw_result = _inference(
+            api, 
+            state["pointcloud_id"], 
+            state.get("threshold"), 
+            state.get("classes", None), 
+            state.get("apply_sliding_window", None),
+            state.get("center_ptc", None),
+        )
     except Exception as e:
         sly.logger.exception(e)
 
@@ -198,7 +211,14 @@ def inference_pointcloud_ids(api: sly.Api, task_id, context, state, app_logger):
     raw_results = OrderedDict()
     for pointcloud_id in state["pointcloud_ids"]:
         try:
-            tracking_result = _inference(api, pointcloud_id, state.get("threshold"), state.get("classes", None))
+            tracking_result = _inference(
+                api, 
+                pointcloud_id, 
+                state.get("threshold"), 
+                state.get("classes", None),
+                state.get("apply_sliding_window", None),
+                state.get("center_ptc", None),
+            )
         except Exception as e:
             sly.logger.exception(e)
 

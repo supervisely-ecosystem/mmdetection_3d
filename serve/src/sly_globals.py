@@ -36,6 +36,8 @@ meta: sly.ProjectMeta = None
 local_weights_path = None
 model_config_local_path = None
 model_name = None
+ptc_range_centered = []
+train_data_centered = None
 
 configs_dir = "/tmp/mmdet3d/configs"
 if not os.path.exists(configs_dir):
