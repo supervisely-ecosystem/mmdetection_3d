@@ -115,7 +115,9 @@
                         </div>
                     </div>
                 </div>
-
+                <sly-field title="Expand point cloud range to be centered" description="Advanced option. Leave default value if you don't know what this means.">
+                    <el-checkbox v-model="state.expandPCR" :disabled="state.deployed">Expand</el-checkbox>
+                </sly-field>
                 <span v-if="!state.deployed">Selected checkpoint: {{state.selectedModel[state.pretrainedModel]}}</span>
             </el-tab-pane>
             <el-tab-pane name="custom">
@@ -136,9 +138,6 @@
             </el-select>
         </sly-field>
 
-        <sly-field v-if="state.weightsInitialization == 'pretrained'" title="Expand point cloud range to be centered" description="Advanced option. Stay default value if you don't know what does it mean.">
-            <el-checkbox v-model="state.expandPCR" :disabled="state.deployed">Expand</el-checkbox>
-        </sly-field>
         <div v-if="data.progressWeights.message" class="mt10">
             <div style="color: #20a0ff">
                 {{data.progressWeights.message}}: {{data.progressWeights.current}} / {{data.progressWeights.total}}

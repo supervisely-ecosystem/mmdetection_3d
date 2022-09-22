@@ -281,6 +281,8 @@ def get_per_box_predictions(result, score_thr, selected_classes, cfg, center_vec
 def get_slide_boxes(pointcloud_range, model_pcr_dim, apply_sw):
     pcd = pointcloud_range.copy()
     ws = model_pcr_dim.copy()
+    if isinstance(apply_sw, dict):
+        apply_sw = list(apply_sw.values())
     slides = [0,0,0]
     for i in range(3):
         if apply_sw is not None and not apply_sw[i]:
@@ -315,6 +317,8 @@ def is_pcr_centered(pcr, eps=0.01):
 
 def inference_model(model, local_pointcloud_path, thresh=0.3, selected_classes=None,
                     apply_sw=None, center_ptc=None):
+    if isinstance(center_ptc, dict):
+        center_ptc = list(center_ptc.values())
     pcd = o3d.io.read_point_cloud(local_pointcloud_path)
     pcd_np = np.asarray(pcd.points)
     # check ptc ranges

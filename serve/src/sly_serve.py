@@ -25,7 +25,9 @@ def send_error_data(func):
             value = func(*args, **kwargs)
         except Exception as e:
             request_id = kwargs["context"]["request_id"]
+            sly.logger.warning(e)
             g.my_app.send_response(request_id, data={"error": repr(e)})
+            g.my_app.stop()
         return value
 
     return wrapper
@@ -177,17 +179,15 @@ class Annotation:
 @send_error_data
 def inference_pointcloud_id(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
-    try:
-        raw_result = _inference(
-            api, 
-            state["pointcloud_id"], 
-            state.get("threshold"), 
-            state.get("classes", None), 
-            state.get("apply_sliding_window", None),
-            state.get("center_ptc", None),
-        )
-    except Exception as e:
-        sly.logger.exception(e)
+
+    raw_result = _inference(
+        api, 
+        state["pointcloud_id"], 
+        state.get("threshold"), 
+        state.get("classes", None), 
+        state.get("apply_sliding_window", None),
+        state.get("center_ptc", None),
+    )
 
     ann = Annotation.create_annotation(
         {state["pointcloud_id"]: raw_result}, 
@@ -210,17 +210,14 @@ def inference_pointcloud_ids(api: sly.Api, task_id, context, state, app_logger):
     app_logger.debug("Input data", extra={"state": state})
     raw_results = OrderedDict()
     for pointcloud_id in state["pointcloud_ids"]:
-        try:
-            tracking_result = _inference(
-                api, 
-                pointcloud_id, 
-                state.get("threshold"), 
-                state.get("classes", None),
-                state.get("apply_sliding_window", None),
-                state.get("center_ptc", None),
-            )
-        except Exception as e:
-            sly.logger.exception(e)
+        tracking_result = _inference(
+            api, 
+            pointcloud_id, 
+            state.get("threshold"), 
+            state.get("classes", None),
+            state.get("apply_sliding_window", None),
+            state.get("center_ptc", None),
+        )
 
         sly.logger.info(f"Predict {pointcloud_id}")
         raw_results[pointcloud_id] = tracking_result
@@ -233,6 +230,7 @@ def inference_pointcloud_ids(api: sly.Api, task_id, context, state, app_logger):
 
 @g.my_app.callback("run")
 @g.my_app.ignore_errors_and_show_dialog_window()
+@send_error_data
 def init_model(api: sly.Api, task_id, context, state, app_logger):
     g.remote_weights_path = state["weightsPath"]
     g.device = state["device"]
