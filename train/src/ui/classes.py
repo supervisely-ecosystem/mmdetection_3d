@@ -20,9 +20,9 @@ def init(api: sly.Api, data, state, project_id, project_meta: sly.ProjectMeta):
         if obj_class.geometry_type == Cuboid3d:
             selected_classes_json.append(obj_class.to_json())
 
-    for obj_class in selected_classes_json:
-        obj_class["imagesCount"] = class_images[obj_class["title"]]
-        obj_class["objectsCount"] = class_objects[obj_class["title"]]
+    # for obj_class in selected_classes_json:
+    #     obj_class["imagesCount"] = class_images[obj_class["title"]]
+    #     obj_class["objectsCount"] = class_objects[obj_class["title"]]
 
     data["classes"] = selected_classes_json
     state["selectedClasses"] = []

@@ -54,7 +54,7 @@ def init(project_info, data, state):
     state["collapsedSplits"] = True
     state["disabledSplits"] = True
     state["point_cloud_range"] = None
-    state["point_cloud_dim"] = None
+    state["point_cloud_dim"] = [0, 0, 0]
 
     init_progress("PointsRangeCalculation", state)
 

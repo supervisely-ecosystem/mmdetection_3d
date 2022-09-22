@@ -61,7 +61,9 @@
                     </div>
                 </div>
             </div>
-
+            <sly-field title="Load weights" description="If not selected, model will be trained from scratch and will be configured as in selected checkpoint.">
+                <el-checkbox v-model="state.load_weights" :disabled="state.deployed">Load</el-checkbox>
+            </sly-field>
             <span v-if="!data.doneModels">Selected checkpoint: {{state.selectedModel[state.pretrainedModel]}}</span>
         </el-tab-pane>
         <el-tab-pane name="custom">

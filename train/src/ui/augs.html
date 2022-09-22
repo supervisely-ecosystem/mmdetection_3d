@@ -1,5 +1,5 @@
 <sly-card title="Training augmentations"
-          subtitle="Choose one of the prepared templates"
+          subtitle="Choose one of the prepared templates. Default values are good enough for basic experiments."
           :options="{collapsable: true}"
           :collapsed.sync="state.collapsedAugs"
           :disabled="{disabled: state.disabledAugs, message: 'Finish all previous steps before choosing augmentations'}"
@@ -13,10 +13,10 @@
             :disabled="data.doneAugs"
         >
             <el-option
-                    v-for="item in data.augTemplates"
-                    :key="item.name"
-                    :label="item.name"
-                    :value="item.name">
+                v-for="item in data.augTemplates"
+                :key="item.name"
+                :label="item.name"
+                :value="item.name">
             </el-option>
         </el-select>
     </sly-field>

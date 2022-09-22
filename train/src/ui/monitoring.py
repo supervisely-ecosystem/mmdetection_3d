@@ -61,7 +61,7 @@ def init_charts(data, state):
     state["smoothing"] = 0.6
     # train charts
     state["chartLR"] = init_chart("LR", names=["lr"], xs = [[]], ys = [[]], smoothing=None, decimals=6, xdecimals=2)
-    state["chartLoss"] = init_chart("Basic Losses", names=["total"], xs=[[]], ys=[[]], smoothing=state["smoothing"], decimals=6, xdecimals=2)
+    state["chartLoss"] = init_chart("Loss", names=["total"], xs=[[]], ys=[[]], smoothing=state["smoothing"], decimals=6, xdecimals=2)
     
     # val charts
     state["chartMAP_25"] = init_chart("mAP score (0.25)", names=["total"], xs=[[]], ys=[[]], smoothing=state["smoothing"], decimals=6, xdecimals=2, yrange=[0, 1])
@@ -150,7 +150,6 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         cfg = init_cfg(state)
         # print(cfg.pretty_text) # TODO: for debug
 
-        # TODO: check current existing PointShuffle in train pipeline
         # TODO: bug: save latest even if 'latest' false
         os.makedirs(os.path.join(g.checkpoints_dir, cfg.work_dir.split('/')[-1]), exist_ok=True)
         cfg.dump(osp.join(g.checkpoints_dir, cfg.work_dir.split('/')[-1], "config.py"))

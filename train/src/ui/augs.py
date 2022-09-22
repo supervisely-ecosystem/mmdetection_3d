@@ -43,12 +43,12 @@ aug_templates = [{
     }]
 
 def init(data, state):
-    state["augsTemplateName"] = 'Medium'
+    state["augsTemplateName"] = 'Light'
     state["collapsedAugs"] = True
     state["disabledAugs"] = True
     data["doneAugs"] = False
     data["augTemplates"] = aug_templates
-    state["selectedAugs"] = data["augTemplates"][2]['augs'].copy()
+    state["selectedAugs"] = data["augTemplates"][1]['augs'].copy() # Light
 
 def restart(data, state):
     data["doneAugs"] = False

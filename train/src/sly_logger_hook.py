@@ -5,7 +5,7 @@ import supervisely_lib as sly
 from sly_train_progress import add_progress_to_request
 import sly_globals as g
 import classes as cls
-
+import params
 
 @HOOKS.register_module()
 class SuperviselyLoggerHook(TextLoggerHook):
@@ -48,7 +48,8 @@ class SuperviselyLoggerHook(TextLoggerHook):
         
         if log_dict['mode'] == 'train':
             epoch_float = float(self.progress_epoch.current - 1) + float(self.progress_iter.current) / float(self.progress_iter.total)
-            
+            if self.progress_iter.total // params.log_interval == self.progress_iter.current // params.log_interval:
+                fields.append({"field": "state.isValidation", "payload": True})
             fields.extend([
                 {"field": "state.chartLR.series[0].data", "payload": [[epoch_float, round(log_dict["lr"], 6)]], "append": True},
                 {"field": "state.chartLoss.series[0].data", "payload": [[epoch_float, round(log_dict["loss"], 6)]], "append": True},

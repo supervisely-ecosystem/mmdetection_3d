@@ -41,6 +41,7 @@ def init(data, state):
     state["disabledModels"] = True
     state["weightsPath"] = ""
     data["doneModels"] = False
+    state["load_weights"] = True
     state["loadingModel"] = False
 
     ProgressBar(g.task_id, g.api, "data.progressWeights", "Download weights", is_size=True,
@@ -56,6 +57,8 @@ def get_pretrained_models(return_metrics=False):
         for model_meta in models:
             with open(os.path.join(g.configs_dir, model_meta["yml_file"]), "r") as stream:
                 model_info = yaml.safe_load(stream)
+                if "serveonly" in model_meta.keys() and model_meta["serveonly"]:
+                    continue
                 model_config[model_meta["model_name"]] = {}
                 model_config[model_meta["model_name"]]["checkpoints"] = []
                 model_config[model_meta["model_name"]]["paper_from"] = model_meta["paper_from"]
@@ -166,28 +169,25 @@ def download_weights(api: sly.Api, task_id, context, state, app_logger):
             weights_url = selected_model.get('weights')
             config_file = selected_model.get('config_file')
             if weights_url is not None:
-                g.local_weights_path = os.path.join(g.my_app.data_dir, sly.fs.get_file_name_with_ext(weights_url))
                 g.model_config_local_path = os.path.join(g.root_source_dir, config_file)
-                if sly.fs.file_exists(g.local_weights_path) is False:
-                    response = requests.head(weights_url, allow_redirects=True)
-                    sizeb = int(response.headers.get('content-length', 0))
-                    progress.set_total(sizeb)
-                    os.makedirs(os.path.dirname(g.local_weights_path), exist_ok=True)
-                    sly.fs.download(weights_url, g.local_weights_path, g.my_app.cache, progress.increment)
-                    progress.reset_and_update()
-                sly.logger.info("Pretrained weights has been successfully downloaded",
-                                extra={"weights": g.local_weights_path})
+                
+                if not state["load_weights"]:
+                    g.local_weights_path = None
+                else:
+                    g.local_weights_path = os.path.join(g.my_app.data_dir, sly.fs.get_file_name_with_ext(weights_url))
+                    
+                    if sly.fs.file_exists(g.local_weights_path) is False:
+                        response = requests.head(weights_url, allow_redirects=True)
+                        sizeb = int(response.headers.get('content-length', 0))
+                        progress.set_total(sizeb)
+                        os.makedirs(os.path.dirname(g.local_weights_path), exist_ok=True)
+                        sly.fs.download(weights_url, g.local_weights_path, g.my_app.cache, progress.increment)
+                        progress.reset_and_update()
+                    sly.logger.info("Pretrained weights has been successfully downloaded",
+                                    extra={"weights": g.local_weights_path})
     except Exception as e:
         progress.reset_and_update()
         raise e
-
-    fields = [
-        {"field": "state.loadingModel", "payload": False},
-        {"field": "data.doneModels", "payload": True},
-        {"field": "state.collapsedClasses", "payload": False},
-        {"field": "state.disabledClasses", "payload": False},
-        {"field": "state.activeStep", "payload": 3},
-    ]
 
     global cfg
     if g.model_config_local_path is None:
@@ -198,6 +198,15 @@ def download_weights(api: sly.Api, task_id, context, state, app_logger):
         cfg.pretrained_model = state["pretrainedModel"]
 
     # print(f'Initial config:\n{cfg.pretty_text}') # TODO: debug
+    pcr = cfg.point_cloud_range
+    fields = [
+        {"field": "state.window_size", "payload": [float(pcr[3] - pcr[0]), float(pcr[4] - pcr[1]), float(pcr[5] - pcr[2])]},
+        {"field": "state.loadingModel", "payload": False},
+        {"field": "data.doneModels", "payload": True},
+        {"field": "state.collapsedClasses", "payload": False},
+        {"field": "state.disabledClasses", "payload": False},
+        {"field": "state.activeStep", "payload": 3},
+    ]
 
     g.api.app.set_fields(g.task_id, fields)
 

@@ -1,10 +1,12 @@
 import supervisely as sly
 import sly_globals as g
 
+log_interval = 1
+
 def init_general(state):
     state["gpusId"] = 0
     state["randomSeed"] = 0
-    state["logConfigInterval"] = 10
+    state["logConfigInterval"] = 5
     state["epochs"] = 12
     state["valInterval"] = 1
     state["batchSizePerGPU"] = 4
@@ -13,8 +15,7 @@ def init_general(state):
 def init_checkpoints(state):
     state["checkpointInterval"] = 1
     state["maxKeepCkptsEnabled"] = True
-    state["maxKeepCkpts"] = 1
-    state["saveLast"] = False
+    state["maxKeepCkpts"] = 3
     state["saveBest"] = True
 
 def init_optimizer(state):
@@ -29,11 +30,6 @@ def init_optimizer(state):
     state["amsgrad"] = False
     state["momentum"] = 0.9
     state["momentumDecay"] = 0.004
-
-def init_losses(data, state):
-    state["useClassWeights"] = False
-    state["classWeights"] = ""
-    data["classesList"] = [class_obj["title"] for class_obj in g.project_meta.obj_classes.to_json()]
 
 def init_lr_scheduler(data, state):
     state["lrPolicy"] = "Step"
@@ -77,8 +73,6 @@ def init(data, state):
     init_general(state)
     init_checkpoints(state)
     init_optimizer(state)
-    # TODO:
-    # init_losses(data, state)
     init_lr_scheduler(data, state)
 
     state["currentTab"] = "general"
@@ -96,6 +90,8 @@ def restart(data, state):
 @sly.timeit
 @g.my_app.ignore_errors_and_show_dialog_window()
 def use_hyp(api: sly.Api, task_id, context, state, app_logger):
+    global log_interval
+    log_interval = state["logConfigInterval"]
     fields = [
         {"field": "data.doneParams", "payload": True},
         {"field": "state.collapsedMonitoring", "payload": False},

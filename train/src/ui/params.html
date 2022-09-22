@@ -73,13 +73,6 @@
                 <el-input v-if="!state.maxKeepCkptsEnabled" placeholder="unlimited" :disabled="true" style="width: 180px;"></el-input>
             </sly-field>
 
-            <sly-field title="Save last checkpoint"
-                       description="Whether to force the last checkpoint to be saved regardless of interval">
-                <el-switch v-model="state.saveLast"
-                           on-color="#13ce66" off-color="#B8B8B8"
-                           :disabled="data.doneParams">
-                </el-switch>
-            </sly-field>
             <sly-field title="Save best checkpoint"
                        description="Best checkpoint will be marked with prefix 'best_'">
                 <el-switch v-model="state.saveBest"
@@ -168,7 +161,7 @@
                    description="Cyclic and OneCycle LR policies will not be able to use when 'by epoch' chosen."
                    style="padding-top: 0; padding-bottom: 0; margin: 10px 5px;">
 
-                <sly-icon slot="icon" :options="{ color: '#cece66', bgColor: '#f7f7eb', rounded: false }">
+                <sly-icon slot="icon" :options="{ color: '#d1b936', bgColor: '#fcf1b3', rounded: false }">
                     <i class="zmdi zmdi-info"></i>
                 </sly-icon>
             </sly-field>

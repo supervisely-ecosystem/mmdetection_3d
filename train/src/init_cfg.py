@@ -51,22 +51,28 @@ def init_cfg_pipelines(cfg, state, dims):
             # TODO: change in the future
             del cfg.train_pipeline[train_pipeline_len - 1 - idx]
             # cfg.train_pipeline[train_pipeline_len - 1 - idx].db_sampler = None
+        # elif pipeline_step.type == "ObjectNoise":
+        #     # TODO: change in the future
+        #     del cfg.train_pipeline[train_pipeline_len - 1 - idx]
+        # elif pipeline_step.type == "PointSample":
+        #     # TODO: change in the future
+        #     del cfg.train_pipeline[train_pipeline_len - 1 - idx]
         elif pipeline_step.type == "RandomFlip3D":
-            cfg.train_pipeline[train_pipeline_len - 1 - idx].flip_ratio_bev_horizontal = state["selectedAugs"]["flip_horizontal"]
-            cfg.train_pipeline[train_pipeline_len - 1 - idx].flip_ratio_bev_vertical = state["selectedAugs"]["flip_vertical"]
+            cfg.train_pipeline[train_pipeline_len - 1 - idx].flip_ratio_bev_horizontal = float(state["selectedAugs"]["flip_horizontal"])
+            cfg.train_pipeline[train_pipeline_len - 1 - idx].flip_ratio_bev_vertical = float(state["selectedAugs"]["flip_vertical"])
         elif pipeline_step.type == "GlobalRotScaleTrans":
             cfg.train_pipeline[train_pipeline_len - 1 - idx].rot_range = [
-                state["selectedAugs"]["global_rot_range"][0],
-                state["selectedAugs"]["global_rot_range"][1]
+                float(state["selectedAugs"]["global_rot_range"][0]),
+                float(state["selectedAugs"]["global_rot_range"][1])
             ]
             cfg.train_pipeline[train_pipeline_len - 1 - idx].scale_ratio_range = [
-                state["selectedAugs"]["global_scale_range"][0],
-                state["selectedAugs"]["global_scale_range"][1]
+                float(state["selectedAugs"]["global_scale_range"][0]),
+                float(state["selectedAugs"]["global_scale_range"][1])
             ]
             cfg.train_pipeline[train_pipeline_len - 1 - idx].translation_std=[
-                state["selectedAugs"]["global_translation_std"][0],
-                state["selectedAugs"]["global_translation_std"][1],
-                state["selectedAugs"]["global_translation_std"][2]
+                float(state["selectedAugs"]["global_translation_std"][0]),
+                float(state["selectedAugs"]["global_translation_std"][1]),
+                float(state["selectedAugs"]["global_translation_std"][2])
             ]
         elif pipeline_step.type == "PointsRangeFilter":
             cfg.train_pipeline[train_pipeline_len - 1 - idx].point_cloud_range = cfg.point_cloud_range
@@ -84,8 +90,11 @@ def init_cfg_pipelines(cfg, state, dims):
             for tr_idx, transform in enumerate(pipeline_step.transforms):
                 if transform.type == "PointsRangeFilter":
                     cfg.test_pipeline[test_pipeline_len - 1 - idx].transforms[tr_idx].point_cloud_range=cfg.point_cloud_range
-                if transform.type == "DefaultFormatBundle3D":
+                elif transform.type == "DefaultFormatBundle3D":
                     cfg.test_pipeline[test_pipeline_len - 1 - idx].transforms[tr_idx].class_names=cfg.class_names
+                # elif transform.type == "PointSample":
+                #     # TODO: maybe change in the future
+                #     del cfg.test_pipeline[test_pipeline_len - 1 - idx].transforms[tr_idx]
 
     eval_pipeline_len = len(cfg.eval_pipeline)
     for idx, pipeline_step in enumerate(cfg.eval_pipeline[::-1]):
@@ -102,13 +111,12 @@ def init_cfg_splits(cfg):
     cfg.dataset_type = "SuperviselyDataset"
     cfg.data_root = g.project_dir
 
+    cfg.data.train = ConfigDict()
+    cfg.data.val = ConfigDict()
+    cfg.data.test = ConfigDict()
     train_dataset = cfg.data.train
     val_dataset = cfg.data.val
     test_dataset = cfg.data.test
-
-    if cfg.data.train.type == "RepeatDataset":
-        cfg.data.train = cfg.data.train.dataset
-        train_dataset = cfg.data.train
 
     train_dataset.pipeline = cfg.train_pipeline
     train_dataset.data_root = cfg.data_root
@@ -117,10 +125,6 @@ def init_cfg_splits(cfg):
     train_dataset.test_mode = False
     train_dataset.classes = cfg.class_names
     train_dataset.filter_empty_gt = False
-    if hasattr(train_dataset, "times"):
-        delattr(train_dataset, "times")
-    if hasattr(train_dataset, "dataset"):
-        delattr(train_dataset, "dataset")
 
     val_dataset.pipeline = cfg.test_pipeline
     val_dataset.data_root = cfg.data_root
@@ -147,7 +151,6 @@ def init_cfg_training(cfg, state):
 
     # TODO: sync with state["gpusId"] if it will be needed
     cfg.gpu_ids = range(1)
-    # TODO:
     cfg.load_from = g.local_weights_path
     cfg.work_dir = g.my_app.data_dir
 
@@ -177,7 +180,6 @@ def init_cfg_checkpoint(cfg, state):
     cfg.checkpoint_config.interval = state["checkpointInterval"]
     cfg.checkpoint_config.by_epoch = True
     cfg.checkpoint_config.max_keep_ckpts = state["maxKeepCkpts"] if state["maxKeepCkptsEnabled"] else None
-    cfg.checkpoint_config.save_last = state["saveLast"]
     cfg.checkpoint_config.out_dir = g.checkpoints_dir
 
 
@@ -232,46 +234,48 @@ def init_cfg_lr(cfg, state):
 
 
 def init_model(cfg, dims):
-    # TODO: work only with CenterPoint now
 
     # TODO: add in the future
     if hasattr(cfg, "db_sampler"):
         cfg.db_sampler = None
+    # if cfg.pretrained_model == "3DSSD":
+    #     cfg.model.test_cfg.max_output_num = 500 # instead of default 100
+    if cfg.pretrained_model == "CenterPoint":
+        ss = cfg.model.pts_middle_encoder.sparse_shape
+        pcr = cfg.point_cloud_range
+        cfg.voxel_size = [
+            (pcr[3] - pcr[0]) / ss[1],
+            (pcr[4] - pcr[1]) / ss[2],
+            (pcr[5] - pcr[2]) / (ss[0] - 1),
+        ]
 
-    ss = cfg.model.pts_middle_encoder.sparse_shape
-    pcr = cfg.point_cloud_range
-    cfg.voxel_size = [
-        (pcr[3] - pcr[0]) / ss[1],
-        (pcr[4] - pcr[1]) / ss[2],
-        (pcr[5] - pcr[2]) / (ss[0] - 1),
-    ]
+        cfg.model.type = "CenterPointFixed"
+        cfg.model.pts_bbox_head.type = "CenterHeadWithVel"
+        cfg.model.pts_middle_encoder.in_channels = dims
+        cfg.model.pts_voxel_encoder.num_features = dims
 
-    cfg.model.type = "CenterPointFixed"
-    cfg.model.pts_bbox_head.type = "CenterHeadWithVel"
-    cfg.model.pts_middle_encoder.in_channels = dims
-    cfg.model.pts_voxel_encoder.num_features = dims
+        cfg.model.pts_voxel_layer.voxel_size = cfg.voxel_size
+        # cfg.model.pts_voxel_layer.max_voxels = [90000, 120000] ??
+        cfg.model.pts_voxel_layer.point_cloud_range = pcr
+        cfg.model.pts_bbox_head.bbox_coder.post_center_range = pcr
+        cfg.model.pts_bbox_head.bbox_coder.pc_range = pcr
+        cfg.model.pts_bbox_head.bbox_coder.voxel_size = cfg.voxel_size[:2]
+        # cfg.model.pts_bbox_head.bbox_coder.code_size = 7
+        # TODO: maybe allow to customize by user?
+        cfg.model.train_cfg.pts.code_weights = [1., 1., 1., 1., 1., 1., 1., 1., 0.1, 0.1] 
+        cfg.model.train_cfg.pts.point_cloud_range = pcr
+        cfg.model.train_cfg.pts.voxel_size = cfg.voxel_size
+        cfg.model.test_cfg.pts.post_center_limit_range = pcr
+        #cfg.model.test_cfg.pts.score_threshold = 0
+        cfg.model.test_cfg.pts.pc_range = pcr
+        cfg.model.test_cfg.pts.voxel_size = cfg.voxel_size[:2]
 
-    # TODO: check all model params below
-    cfg.model.pts_voxel_layer.voxel_size = cfg.voxel_size
-    # cfg.model.pts_voxel_layer.max_voxels = [90000, 120000] ??
-    cfg.model.pts_voxel_layer.point_cloud_range = cfg.point_cloud_range
-    cfg.model.pts_bbox_head.bbox_coder.post_center_range = cfg.point_cloud_range
-    cfg.model.pts_bbox_head.bbox_coder.pc_range = cfg.point_cloud_range
-    cfg.model.pts_bbox_head.bbox_coder.voxel_size = cfg.voxel_size[:2]
-    cfg.model.train_cfg.pts.code_weights = [1., 1., 1., 1., 1., 1., 1., 1., 0.1, 0.1] 
-    cfg.model.train_cfg.pts.point_cloud_range = cfg.point_cloud_range
-    cfg.model.train_cfg.pts.voxel_size = cfg.voxel_size
-    # cfg.model.train_cfg.pts.min_radius = 2
-    cfg.model.test_cfg.pts.post_center_limit_range = cfg.point_cloud_range
-    # cfg.model.test_cfg.pts.min_radius = [] ????
-    # cfg.model.test_cfg.pts.score_threshold = 0
-    cfg.model.test_cfg.pts.pc_range = cfg.point_cloud_range
-    cfg.model.test_cfg.pts.voxel_size = cfg.voxel_size[:2]
-
-    class_dicts = []
-    for selected_class in cfg.class_names:
-        class_dicts.append(dict(num_class=1, class_names=[selected_class]))
-    cfg.model.pts_bbox_head.tasks = class_dicts
+        class_dicts = []
+        for selected_class in cfg.class_names:
+            class_dicts.append(dict(num_class=1, class_names=[selected_class]))
+        cfg.model.pts_bbox_head.tasks = class_dicts
+    else:
+        raise NotImplementedError(f"Current model {cfg.pretrained_model} is not supported now.")
 
 def init_cfg(state):
     cfg = models.cfg

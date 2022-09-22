@@ -138,7 +138,10 @@ def outdoor_eval(gt_annos,
     gt = {}  # map {class_id: gt}
     for img_id in range(len(dt_annos)):
         # parse detected annotations
-        det_anno = dt_annos[img_id]['pts_bbox']
+        if 'pts_bbox' in dt_annos[img_id].keys():
+            det_anno = dt_annos[img_id]['pts_bbox']
+        else:
+            det_anno = dt_annos[img_id]
         for i in range(len(det_anno['labels_3d'])):
             label = det_anno['labels_3d'].numpy()[i]
             bbox = det_anno['boxes_3d'].convert_to(box_mode_3d)[i]
@@ -242,7 +245,7 @@ class SuperviselyDataset(Custom3DDataset):
                 gt_labels_3d.append(self.CLASSES.index(cat))
             else:
                 gt_labels_3d.append(-1)
-        gt_labels_3d = np.array(gt_labels_3d)
+        gt_labels_3d = np.array(gt_labels_3d, dtype=np.int64)
 
         # Obtain original box 3d type in info file
         ori_box_type_3d = info['annos']['box_type_3d']
