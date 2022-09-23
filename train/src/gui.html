@@ -1,0 +1,103 @@
+<div id="mmdet3d-train-model">
+    <sly-style>
+        #mmdet3d-train-model .el-tabs.el-tabs-cards .el-radio {
+            display: flex;
+            align-items: start;
+            margin-left: 0;
+            white-space: normal;
+        }
+
+        #mmdet3d-train-model .el-tabs.el-tabs-cards .el-radio__label div {
+            color: #7f858e;
+            font-size: 13px;
+        }
+
+        .beautiful-table { border-collapse: collapse; width 100%; }
+        .beautiful-table tr:nth-child(2n) { background-color: #f6f8fa; }
+        .beautiful-table td, .beautiful-table th {
+            border: 1px solid #dfe2e5;
+            padding: 6px 13px;
+            text-align: center;
+            line-height: 20px;
+        }
+        #mmdet3d-train-model  .beautiful-table.al td, .beautiful-table.al th {
+            text-align: left;
+        }
+        #mmdet3d-train-model td.hid-text {
+            max-width: 0;
+            width: 30%;
+        }
+        #mmdet3d-train-model td.hid-text .el-radio__label {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        #mmdet3d-train-model td.hid-text{
+            text-align: left;
+        }
+
+        #mmdet3d-train-model .el-tabs.el-tabs-cards { 
+            border-radius: 4px; 
+            box-shadow: none; 
+        }
+        #mmdet3d-train-model .el-tabs.el-tabs-cards .el-tabs__header { 
+            background-color: #f6fafd; 
+        }
+        #mmdet3d-train-model .el-tabs.el-tabs-cards .el-tabs__nav { 
+            float: none; 
+            display: flex; 
+            justify-content: space-between; 
+        }
+        #mmdet3d-train-model .el-tabs.el-tabs-cards .el-tabs__item { 
+            flex: 1; 
+            margin-bottom: -3px; 
+            padding: 9px 16px 13px;
+            height: auto; 
+            line-height: normal; 
+            border-radius: 4px; 
+        }
+    </sly-style>
+
+    <sly-stepper :active="state.activeStep">
+        <sly-stepper-item>
+            {% include 'train/src/ui/input_project.html' %}
+        </sly-stepper-item>
+        <sly-stepper-item>
+            {% include 'train/src/ui/models.html' %}
+        </sly-stepper-item>
+        <sly-stepper-item>
+            {% include 'train/src/ui/classes.html' %}
+        </sly-stepper-item>
+        <sly-stepper-item>
+            {% include 'train/src/ui/splits.html' %}
+        </sly-stepper-item>
+        <sly-stepper-item>
+            {% include 'train/src/ui/data_preparation.html' %}
+        </sly-stepper-item>
+        <sly-stepper-item>
+            {% include 'train/src/ui/augs.html' %}
+        </sly-stepper-item>
+        <sly-stepper-item>
+            {% include 'train/src/ui/params.html' %}
+        </sly-stepper-item>
+        <sly-stepper-item>
+            {% include 'train/src/ui/monitoring.html' %}
+        </sly-stepper-item>
+
+    </sly-stepper>
+    <el-dialog
+            title="Restart from this step"
+            :visible.sync="state.restartFrom"
+            size="tiny">
+        <span>This step and all next steps will be reseted</span>
+        <span slot="footer" class="dialog-footer">
+            <el-button @click="state.restartFrom = null">Cancel</el-button>
+            <!--        $nextTick(() => { $refs['card3'].$el.scrollIntoView({behavior: 'smooth', block: 'center'}); });-->
+            <el-button type="primary" class="regular"
+                       @click="command('restart');">
+                Confirm
+            </el-button>
+        </span>
+    </el-dialog>
+</div>

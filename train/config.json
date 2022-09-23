@@ -1,0 +1,29 @@
+{
+    "name": "Train MMDetection3D",
+    "type": "app",
+    "categories": [
+      "neural network",
+      "pointclouds",
+      "detection & tracking",
+      "train"
+    ],
+    "description": "Dashboard to configure, start and monitor training",
+    "docker_image": "supervisely/mmdet3d:1.0.4",
+    "main_script": "train/src/sly_train.py",
+    "gui_template": "train/src/gui.html",
+    "task_location": "workspace_tasks",
+    "instance_version": "6.4.59",
+    "icon": "",
+    "icon_cover": true,
+    "isolate": true,
+    "need_gpu": true,
+    "context_menu": {
+        "target": [
+          "point_cloud_episodes_project"
+        ],
+        "context_root": "Neural Networks",
+        "context_category": "MMDetection3D"
+      },
+    "poster": "",
+    "community_agent": false
+  }

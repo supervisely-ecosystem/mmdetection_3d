@@ -1,0 +1,165 @@
+<sly-card title="Training progress"
+          subtitle="Task progress, detailed logs, metrics charts, and other visualizations"
+          :options="{collapsable: true}"
+          :collapsed.sync="state.collapsedMonitoring"
+          :disabled="{disabled: state.disabledMonitoring, message: 'Finish all previous steps before training the model.'}"
+          ref="step8"
+>
+    <el-button v-if="!state.doneMonitoring"
+               type="primary" class="regular"
+               @click="state.started = true; command('train');"
+               :loading="state.started"
+    >
+        <i class="zmdi zmdi-play mr5"></i> Train
+    </el-button>
+
+    <div v-if="data.outputUrl">
+        <sly-field title="Training artifacts"
+                   description="Training artifacts has been uploaded to Team Files">
+            <a slot="title" target="_blank" :href="`${data.outputUrl}`">{{data.outputName}}</a>
+            <sly-icon slot="icon" :options="{ color: '#33c94c', bgColor: '#d9f7e4', rounded: false }">
+                <i class="zmdi zmdi-folder"></i>
+            </sly-icon>
+        </sly-field>
+        <div>
+            <i class="zmdi zmdi-check-circle mr5" style="color: #13ce66"></i>
+            <span style="color: #5a6772;">Training has been successfully finished</span>
+        </div>
+    </div>
+
+    <sly-field v-if="data.eta" class="mt10"
+               title="ETA"
+               description="Gives an estimate of roughly how long the whole training process will take">
+        <b style="color: #20a0ff"><i class="zmdi zmdi-time-countdown mr5"></i>{{data.eta}}</b>
+    </sly-field>
+
+    <div v-if="data.progressUploadDir && !data.outputUrl" class="mt10">
+        <div style="color: #20a0ff">
+            {{data.progressUploadDir}}: {{data.progressCurrentUploadDir}} / {{data.progressTotalUploadDir}}
+        </div>
+        <el-progress :percentage="data.progressPercentUploadDir"></el-progress>
+    </div>
+    <div v-if="data.progressEpoch" class="mt10">
+        <div style="color: #20a0ff">
+            {{data.progressEpoch}}: {{data.progressCurrentEpoch}} / {{data.progressTotalEpoch}}
+        </div>
+        <el-progress :percentage="data.progressPercentEpoch"></el-progress>
+    </div>
+    <div v-if="data.progressIter" class="mt10">
+        <div v-if="!state.isValidation" style="color: #20a0ff">
+            {{data.progressIter}}: {{data.progressCurrentIter}} / {{data.progressTotalIter}}
+        </div>
+        <div v-else style="color: #20a0ff">
+            Validation...
+        </div>
+        <el-progress :percentage="data.progressPercentIter"></el-progress>
+    </div>
+
+    <div class="mt15" v-if="state.started || state.doneMonitoring">
+        <hr class="mt10 mb10" style="border: 0; border-top: 1px solid rgba(0,0,0,.12);"/>
+        <sly-field title="Smoothing" description="Change the smoothing of line charts">
+            <sly-icon slot="icon" :options="{ color: '#006ad4', bgColor: '#bbe2ff', rounded: false }">
+                <i class="zmdi zmdi-trending-up"></i>
+            </sly-icon>
+            <el-slider
+                    :value="state.smoothing"
+                    :min="0" :max="0.95" :step="0.05" show-input
+                    style="width: 450px;"
+                    @input="(val)=>{
+                                state.smoothing = val;
+                                command('change_smoothing')
+                            }"
+            >
+            </el-slider>
+        </sly-field>
+        
+        <sly-field title="Train">
+            <div class="fflex">
+                <sly-line-chart
+                        style="width: 40%;"
+                        :options.sync="state.chartLR.options"
+                        :content="state.chartLR.series">
+                </sly-line-chart>
+                <sly-line-chart
+                        style="width: 40%;"
+                        :options.sync="state.chartLoss.options"
+                        :content="state.chartLoss.series">
+                </sly-line-chart>
+            </div>
+        </sly-field>
+
+        <sly-field title="Validation">
+            <div class="fflex">
+                <sly-line-chart
+                    style="width: 40%;"
+                    :options.sync="state.chartMAP_25.options"
+                    :content="state.chartMAP_25.series">
+                </sly-line-chart>
+                <sly-line-chart
+                    style="width: 40%;"
+                    :options.sync="state.chartMAR_25.options"
+                    :content="state.chartMAR_25.series">
+                </sly-line-chart>
+            </div>
+
+            <div class="fflex">
+                <sly-line-chart
+                    style="width: 40%;"
+                    :options.sync="state.chartAP_25.options"
+                    :content="state.chartAP_25.series">
+                </sly-line-chart>
+                <sly-line-chart
+                    style="width: 40%;"
+                    :options.sync="state.chartAR_25.options"
+                    :content="state.chartAR_25.series">
+                </sly-line-chart>
+            </div>
+
+            <div class="fflex">
+                <sly-line-chart
+                    style="width: 40%;"
+                    :options.sync="state.chartMAP_5.options"
+                    :content="state.chartMAP_5.series">
+                </sly-line-chart>
+                <sly-line-chart
+                    style="width: 40%;"
+                    :options.sync="state.chartMAR_5.options"
+                    :content="state.chartMAR_5.series">
+                </sly-line-chart>
+            </div>
+
+            <div class="fflex">
+                <sly-line-chart
+                    style="width: 40%;"
+                    :options.sync="state.chartAP_5.options"
+                    :content="state.chartAP_5.series">
+                </sly-line-chart>
+                <sly-line-chart
+                    style="width: 40%;"
+                    :options.sync="state.chartAR_5.options"
+                    :content="state.chartAR_5.series">
+                </sly-line-chart>
+            </div>
+        </sly-field>
+
+        <sly-field title="System Metrics" description="Time and memory">
+            <div class="fflex">
+                <sly-line-chart
+                    style="width: 33%;"
+                    :options.sync="state.chartTime.options"
+                    :content="state.chartTime.series">
+                </sly-line-chart>
+                <sly-line-chart
+                        style="width: 33%;"
+                        :options.sync="state.chartDataTime.options"
+                        :content="state.chartDataTime.series">
+                </sly-line-chart>
+                <sly-line-chart
+                        style="width: 33%;"
+                        :options.sync="state.chartMemory.options"
+                        :content="state.chartMemory.series">
+                </sly-line-chart>
+            </div>
+        </sly-field>
+    </div>
+</sly-card>

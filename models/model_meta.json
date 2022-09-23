@@ -7,20 +7,22 @@
                 "yml_file" : "centerpoint/metafile.yml",
                 "paper_from": "CVPR",
                 "year": 2021,
-                "exclude": "centerpoint_02pillar_second_secfpn_circlenms*"
-
+                "exclude": "centerpoint_02pillar*",
+                "serveonly": false
             },
             {
                 "model_name" : "3DSSD",
                 "yml_file" : "3dssd/metafile.yml",
                 "paper_from": "CVPR",
-                "year": 2020
+                "year": 2020,
+                "serveonly": true
             },
             {
                 "model_name" : "SSN",
                 "yml_file" : "ssn/metafile.yml",
                 "paper_from": "ECCV",
-                "year": 2020
+                "year": 2020,
+                "serveonly": true
             },
             {
                 "model_name" : "PointPillars",
@@ -38,13 +40,15 @@
                 "model_name" : "Group-Free-3D",
                 "yml_file" : "groupfree3d/metafile.yml",
                 "paper_from": "ICCV",
-                "year": 2021
+                "year": 2021,
+                "serveonly": true
             },
             {
                 "model_name" : "VoteNet",
                 "yml_file" : "votenet/metafile.yml",
                 "paper_from": "ICCV",
-                "year": 2019
+                "year": 2019,
+                "serveonly": true
             }
         ]
     }

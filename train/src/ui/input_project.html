@@ -1,0 +1,30 @@
+<sly-card
+        title="Input Project"
+        subtitle="Download point clouds and annotations from server to local app directory"
+        :options="{collapsable: true}"
+        :collapsed.sync="state.collapsedProject"
+        ref="step1"
+>
+    <sly-field title="" description="Project">
+        <a slot="title" target="_blank"
+           :href="`/projects/${data.projectId}/datasets`">{{data.projectName}} ({{data.projectImagesCount}}
+            images)</a>
+    </sly-field>
+
+    <div v-if="data.progressDownloadProject" class="mt10">
+        <div style="color: #20a0ff">{{data.progressDownloadProject}}: {{data.progressCurrentDownloadProject}} / {{data.progressTotalDownloadProject}}</div>
+        <el-progress :percentage="data.progressPercentDownloadProject"></el-progress>
+    </div>
+    <el-button
+            type="primary"
+            class="regular"
+            :loading="data.progressDownloadProject"
+            @click="command('download_project')"
+            v-if="!data.doneProject">
+        Download
+    </el-button>
+    <div v-if="data.doneProject">
+        <i class="zmdi zmdi-check-circle mr5" style="color: #13ce66"></i>
+        <span style="color: #5a6772;">Project has been successfully downloaded</span>
+    </div>
+</sly-card>

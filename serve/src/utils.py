@@ -143,23 +143,58 @@ def download_weights(state):
                             extra={"weights": g.local_weights_path})
 
 
+def expand_point_cloud_range(cfg):
+    pcr = cfg.point_cloud_range
+    for i in range(3):
+        if abs(pcr[i] + pcr[i+3]) > 1e-5:
+            cfg.point_cloud_range[i] = -max(abs(pcr[i]), abs(pcr[i+3]))
+            cfg.point_cloud_range[i+3] = max(abs(pcr[i]), abs(pcr[i+3]))
+
+    for idx, pipeline_step in enumerate(cfg.data.test.pipeline):
+        if pipeline_step.type == "MultiScaleFlipAug3D":
+            for tr_idx, transform in enumerate(pipeline_step.transforms):
+                if transform.type == "PointsRangeFilter":
+                    cfg.data.test.pipeline[idx].transforms[tr_idx].point_cloud_range=cfg.point_cloud_range
+    
+    if g.model_name == "CenterPoint":
+        ss = cfg.model.pts_middle_encoder.sparse_shape
+        cfg.voxel_size = [
+            (pcr[3] - pcr[0]) / ss[1],
+            (pcr[4] - pcr[1]) / ss[2],
+            (pcr[5] - pcr[2]) / (ss[0] - 1),
+        ]
+        cfg.model.pts_voxel_layer.voxel_size = cfg.voxel_size
+        cfg.model.pts_voxel_layer.point_cloud_range = cfg.point_cloud_range
+        cfg.model.pts_bbox_head.bbox_coder.post_center_range = cfg.point_cloud_range
+        cfg.model.pts_bbox_head.bbox_coder.pc_range = cfg.point_cloud_range
+        cfg.model.pts_bbox_head.bbox_coder.voxel_size = cfg.voxel_size[:2]
+        cfg.model.train_cfg.pts.point_cloud_range = cfg.point_cloud_range
+        cfg.model.train_cfg.pts.voxel_size = cfg.voxel_size
+        cfg.model.test_cfg.pts.post_center_limit_range = cfg.point_cloud_range
+        cfg.model.test_cfg.pts.pc_range = cfg.point_cloud_range
+        cfg.model.test_cfg.pts.voxel_size = cfg.voxel_size[:2]
+
+
 def init_model_and_cfg(state):
     cfg = Config.fromfile(g.model_config_local_path)
-    # print(cfg.pretty_text) # TODO: for debug
+    print(cfg.pretty_text) # TODO: for debug
     labels = cfg['class_names']
     g.model_name = state["pretrainedModel"]
     g.gt_index_to_labels = dict(enumerate(labels))
     g.gt_labels = {v: k for k, v in g.gt_index_to_labels.items()}
     obj_classes = sly.ObjClassCollection([sly.ObjClass(k, Cuboid3d) for k in labels])
     g.meta = sly.ProjectMeta(obj_classes=obj_classes)
+    dims = 4
     
-    # if hasattr(cfg.model, "pts_voxel_encoder") and hasattr(cfg.model.pts_voxel_encoder, "in_channels"):
-    #     cfg.model.pts_voxel_encoder.in_channels = 3
+    if state["weightsInitialization"] == "pretrained" and state["expandPCR"]:
+        expand_point_cloud_range(cfg)
 
-    # if hasattr(cfg.model, "voxel_encoder") and hasattr(cfg.model.voxel_encoder, "in_channels"):
-    #     cfg.model.voxel_encoder.in_channels = 3
+    g.ptc_range_centered = is_pcr_centered(cfg.point_cloud_range, eps=1e-5)
+    
+    if hasattr(cfg, "center_coords"):
+        g.train_data_centered = cfg.center_coords
 
-    # TODO: doesn't work
+    # TODO: doesn't work now
     if g.model_name == "Part-A2":
         cfg.model.type = "PartA2Fixed"
         cfg.model.voxel_layer.max_voxels=(800, 800)
@@ -167,7 +202,19 @@ def init_model_and_cfg(state):
     if g.model_name == "CenterPoint":
         cfg.model.type = "CenterPointFixed"
         cfg.model.pts_bbox_head.type = "CenterHeadWithVel"
-        cfg.model.pts_middle_encoder.in_channels = 4
+        cfg.model.pts_middle_encoder.in_channels = dims
+        cfg.model.pts_voxel_encoder.num_features = dims
+
+    cfg.data.test.box_type_3d = 'lidar'
+
+    cfg.data.test.pipeline[0].load_dim = dims
+    cfg.data.test.pipeline[0].use_dim = dims
+
+    for idx, pipeline_step in enumerate(cfg.data.test.pipeline):
+        if pipeline_step.type == "LoadPointsFromMultiSweeps":
+            del cfg.data.test.pipeline[idx]
+
+    # TODO: add data pipeline fixes from train
 
     try:
         g.model = init_model(cfg, g.local_weights_path, state["device"]) 
@@ -185,7 +232,7 @@ def rotate(source_angle, delta):
         result = np.pi + (result + np.pi)
     return result
 
-def get_per_box_predictions(result, score_thr, selected_classes, cfg):
+def get_per_box_predictions(result, score_thr, selected_classes, cfg, center_vec, input_slide_range):
     if 'pts_bbox' in result[0].keys():
         preds = result[0]['pts_bbox']
     else:
@@ -207,10 +254,21 @@ def get_per_box_predictions(result, score_thr, selected_classes, cfg):
         det["detection_name"] = g.gt_index_to_labels[pred_labels[i]]
         if selected_classes is not None and det["detection_name"] not in selected_classes:
             continue
-        det["translation"] = pred_bboxes[i,:3].tolist()
         det["size"] = pred_bboxes[i,3:6].tolist()
         if cfg.dataset_type != "SuperviselyDataset":
             det["size"] = [det["size"][1], det["size"][0], det["size"][2]]
+        det["translation"] = pred_bboxes[i,:3].tolist()
+        det["translation"][2] += det["size"][2] * 0.5
+        for k in range(3):
+            det["translation"][k] += center_vec[k]
+        # skip boxes out of pointcloud range
+        if det["translation"][0] < input_slide_range[0] or \
+            det["translation"][0] > input_slide_range[3] or \
+            det["translation"][1] < input_slide_range[1] or \
+            det["translation"][1] > input_slide_range[4] or \
+            det["translation"][2] < input_slide_range[2] or \
+            det["translation"][2] > input_slide_range[5]:
+            continue
         det["rotation"] = pred_bboxes[i,6].item()
         if cfg.dataset_type != "SuperviselyDataset":
             det["rotation"] = rotate(det["rotation"], -np.pi * 0.5)
@@ -220,31 +278,110 @@ def get_per_box_predictions(result, score_thr, selected_classes, cfg):
     return results
 
 
-def inference_model(model, local_pointcloud_path, thresh=0.3, selected_classes=None):
-    point_dims = 4
+def get_slide_boxes(pointcloud_range, model_pcr_dim, apply_sw):
+    pcd = pointcloud_range.copy()
+    ws = model_pcr_dim.copy()
+    if isinstance(apply_sw, dict):
+        apply_sw = list(apply_sw.values())
+    slides = [0,0,0]
+    for i in range(3):
+        if apply_sw is not None and not apply_sw[i]:
+            slides[i] = 1
+            continue
+        slides[i], overlap = divmod(pcd[i], ws[i])
+        if overlap > 0:
+            slides[i] += 1
+
+    sboxes = []
+    for z in range(int(slides[2])):
+        for y in range(int(slides[1])):
+            for x in range(int(slides[0])):
+                sboxes.append([
+                    ws[0] * x,
+                    ws[0] * (x + 1),
+                    ws[1] * y,
+                    ws[1] * (y + 1),
+                    ws[2] * z,
+                    ws[2] * (z + 1),
+                ])
+    return sboxes
+
+
+def is_pcr_centered(pcr, eps=0.01):
+    return [
+        abs(pcr[3] + pcr[0]) < eps,
+        abs(pcr[4] + pcr[1]) < eps,
+        abs(pcr[5] + pcr[2]) < eps
+    ]
+
+
+def inference_model(model, local_pointcloud_path, thresh=0.3, selected_classes=None,
+                    apply_sw=None, center_ptc=None):
+    if isinstance(center_ptc, dict):
+        center_ptc = list(center_ptc.values())
     pcd = o3d.io.read_point_cloud(local_pointcloud_path)
     pcd_np = np.asarray(pcd.points)
-    intensity = np.zeros((pcd_np.shape[0], 1), dtype=np.float32)
-    pcd_np = np.hstack((pcd_np, intensity))
-    pcd_np.astype(np.float32).tofile(local_pointcloud_path)
+    # check ptc ranges
+    pcr = model.cfg.point_cloud_range
+    pcr_dim = [pcr[3] - pcr[0], pcr[4] - pcr[1], pcr[5] - pcr[2]]
+    input_ptc_dim = [
+        pcd_np[:,0].max() - pcd_np[:,0].min(),
+        pcd_np[:,1].max() - pcd_np[:,1].min(),
+        pcd_np[:,2].max() - pcd_np[:,2].min()
+    ]
+
+    sboxes = get_slide_boxes(input_ptc_dim, pcr_dim, apply_sw)
     
-    model.cfg.data.test.box_type_3d = 'lidar'
-    # TODO: I'm not sure that it is good to change this default parameter
-    # model.cfg.point_cloud_range = [
-    #     pcd_np[:,0].min(), 
-    #     pcd_np[:,1].min(), 
-    #     pcd_np[:,2].min(), 
-    #     pcd_np[:,0].max(), 
-    #     pcd_np[:,1].max(), 
-    #     pcd_np[:,2].max()
-    # ]
+    pcd_sboxes = []
+    for sbox in sboxes:
+        pcd_sbox = []
+        for i in range(3):
+            if center_ptc is None or center_ptc[i]:
+                pcd_sbox.extend([
+                    pcd_np[:,i].min() + sbox[i*2],
+                    pcd_np[:,i].min() + sbox[i*2+1]
+                ])
+            else:
+                pcd_sbox.extend([
+                    pcr[i],
+                    pcr[i+3]
+                ])
+        pcd_sboxes.append(pcd_sbox)
 
-    model.cfg.data.test.pipeline[0].load_dim = point_dims
-    model.cfg.data.test.pipeline[0].use_dim = point_dims
-    for idx, pipeline_step in enumerate(model.cfg.data.test.pipeline):
-        if pipeline_step.type == "LoadPointsFromMultiSweeps":
-            del model.cfg.data.test.pipeline[idx]
-    result, data = inference_detector(model, local_pointcloud_path)
-    result = get_per_box_predictions(result, thresh, selected_classes, model.cfg)
+    results = []
+    # TODO: is it possible to use batch inference here?
+    for sbox in pcd_sboxes:
+        pcd_eps = 1e-3
+        pcd_slide = pcd_np[
+            (pcd_np[:,0] > sbox[0] - pcd_eps) &
+            (pcd_np[:,0] < sbox[1] + pcd_eps) &
+            (pcd_np[:,1] > sbox[2] - pcd_eps) &
+            (pcd_np[:,1] < sbox[3] + pcd_eps) &
+            (pcd_np[:,2] > sbox[4] - pcd_eps) &
+            (pcd_np[:,2] < sbox[5] + pcd_eps)
+        ]
+        if len(pcd_slide) == 0:
+            continue
+        center_vec = [0, 0, 0]
+        input_slide_range = [
+            pcd_slide[:,0].min(),
+            pcd_slide[:,1].min(),
+            pcd_slide[:,2].min(),
+            pcd_slide[:,0].max(),
+            pcd_slide[:,1].max(),
+            pcd_slide[:,2].max()
+        ]
+        for i in range(3):
+            if center_ptc is None or center_ptc[i]:
+                dim_trans = input_slide_range[i] + (input_slide_range[i + 3] - input_slide_range[i]) * 0.5
+                pcd_slide[:,i] -= dim_trans
+                center_vec[i] = dim_trans
 
-    return result
+        intensity = np.zeros((pcd_slide.shape[0], 1), dtype=np.float32)
+        pcd_slide = np.hstack((pcd_slide, intensity))
+        pcd_slide.astype(np.float32).tofile(local_pointcloud_path)
+        
+        result, _ = inference_detector(model, local_pointcloud_path)
+        result = get_per_box_predictions(result, thresh, selected_classes, model.cfg, center_vec, input_slide_range)
+        results.extend(result)
+    return results

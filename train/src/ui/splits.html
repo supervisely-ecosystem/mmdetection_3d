@@ -1,0 +1,112 @@
+<sly-card title="Train / Validation splits"
+          subtitle="Define how to split your data to train/val subsets."
+          :options="{collapsable: true}"
+          :collapsed.sync="state.collapsedSplits"
+          :disabled="{disabled: state.disabledSplits, message: 'Select classes at previous step before choosing train/val splits.'}"
+          ref="step4"
+>
+    <el-tabs type="border-card" class="el-tabs-cards" v-model="state.splitMethod">
+        <el-tab-pane name="random" :disabled="data.doneSplits">
+            <el-radio slot="label" v-model="state.splitMethod" label="random" :disabled="data.doneSplits">
+                Random
+                <div>Shuffle data and split with defined probability</div>
+            </el-radio>
+            <el-table :data="data.randomSplit" class="ultra-table">
+                <el-table-column label="Info" width="180">
+                    <template scope="scope">
+                        <el-tag :type="scope.row.type">
+                            <i v-if="scope.row.name !== 'total'" class="zmdi zmdi-tag mr5"></i>{{scope.row.name}}
+                        </el-tag>
+                    </template>
+                </el-table-column>
+                <el-table-column label="Number of images" width="180">
+                    <template scope="scope">
+                        <span style="margin-left: 10px">{{state.randomSplit.count[scope.row.name]}}</span>
+                    </template>
+                </el-table-column>
+                <el-table-column label="Percent of images">
+                    <template scope="scope">
+                        <div v-if="scope.row.name !== 'train'">
+                            <span style="margin-left: 10px">{{state.randomSplit.percent[scope.row.name]}}%</span>
+                        </div>
+                        <el-slider v-if="scope.row.name === 'train'"
+                                v-model="state.randomSplit.percent.train"
+                                :disabled="state.randomSplit.sliderDisabled || data.doneSplits"
+                                show-input :min="1" :max="99"
+                                style="flex:1; max-width: 99%; margin-left: 15px;"
+                                @input="
+                                state.randomSplit.count.train =
+                                Math.min(parseInt(data.totalImagesCount * state.randomSplit.percent.train / 100, 10),
+                                            data.totalImagesCount - 1);
+                                state.randomSplit.count.train = Math.max(state.randomSplit.count.train, 1);
+                                state.randomSplit.count.val = data.totalImagesCount - state.randomSplit.count.train;
+                                state.randomSplit.percent.val = 100 - state.randomSplit.percent.train"
+                        ></el-slider>
+                    </template>
+                </el-table-column>
+            </el-table>
+        </el-tab-pane>
+        <el-tab-pane name="datasets" :disabled="data.doneSplits">
+            <el-radio slot="label" v-model="state.splitMethod" label="datasets" :disabled="data.doneSplits">
+                Based on datasets
+                <div>Select one or several datasets for every split</div>
+            </el-radio>
+            <sly-field title="Notice: How to make equal splits"
+                    description="Choose the same dataset(s) for train/validation to make splits equal. Can be used for debug
+                                    and for tiny projects">
+                <sly-icon slot="icon" :options="{ color: '#d1b936', bgColor: '#fcf1b3', rounded: false }">
+                    <i class="zmdi zmdi-info"></i>
+                </sly-icon>
+            </sly-field>
+            <sly-field title="Train dataset(s)"
+                    description="all images in selected dataset(s) are considered as training set">
+                <sly-select-dataset
+                        :disabled="data.doneSplits"
+                        :project-id="data.projectId"
+                        :datasets.sync="state.trainDatasets"
+                        :options="{'multiple': true, 'showLabel': false}">
+                </sly-select-dataset>
+            </sly-field>
+            <sly-field title="Validation dataset(s)"
+                    description="all images in selected dataset(s) are considered as validation set">
+                <sly-select-dataset
+                        :disabled="data.doneSplits"
+                        :project-id="data.projectId"
+                        :datasets.sync="state.valDatasets"
+                        :options="{'multiple': true, 'showLabel': false}">
+                </sly-select-dataset>
+            </sly-field>
+        </el-tab-pane>
+    </el-tabs>
+
+    <div v-if="state.progressPointsRangeCalculation" class="mt10">
+        <div style="color: #20a0ff">
+            Checking point cloud sizes: {{state.progressCurrentPointsRangeCalculation}} / {{state.progressTotalPointsRangeCalculation}}
+        </div>
+        <el-progress :percentage="state.progressPercentPointsRangeCalculation"></el-progress>
+    </div>
+
+    <el-button
+            type="primary"
+            class="mt10 regular"
+            :loading="state.splitInProgress"
+            v-if="!data.doneSplits"
+            @click="command('create_splits')">
+        Create
+    </el-button>
+
+    <div v-if="data.doneSplits && !state.splitInProgress" class="mt10">
+        <div>
+            <i class="zmdi zmdi-check-circle mr5" style="color: #13ce66"></i>
+            <span style="color: #5a6772;">
+                Splits have been successfully created: {{state.trainImagesCount}} images in train,
+                {{state.valImagesCount}} images in val.
+            </span>
+        </div>
+        <el-button type="warning" class="regular mt10" :plain="true"
+                @click="state.restartFrom = 4;"
+                v-if="data.doneSplits && !state.started">
+            <i class="zmdi zmdi-rotate-left mr5"></i> Recreate splits
+        </el-button>
+    </div>
+</sly-card>
