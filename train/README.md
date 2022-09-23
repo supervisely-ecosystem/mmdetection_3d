@@ -8,7 +8,7 @@
 <p align="center">
   <a href="#Overview">Overview</a> •
   <a href="#How-To-Run">How To Run</a> •
-  <a href="#Training-on-Demo-Data">TTraining on Demo Data</a> •
+  <a href="#Training-on-Demo-Data">Training on Demo Data</a> •
   <a href="#Related-Apps">Related Apps</a> •
   <a href="#Related-Projects">Related Projects</a> •
   <a href="#Screenshot">Screenshot</a> •
