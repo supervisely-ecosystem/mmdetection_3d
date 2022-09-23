@@ -29,7 +29,8 @@
                 "yml_file" : "pointpillars/metafile.yml",
                 "paper_from": "CVPR",
                 "exclude": "hv_pointpillars_secfpn_sbn_2x16_2x_waymo*",
-                "year": 2019
+                "year": 2019,
+                "serveonly": true
             }
         ]
     },
