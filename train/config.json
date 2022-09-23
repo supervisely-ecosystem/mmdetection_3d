@@ -20,7 +20,7 @@
     "context_menu": {
         "target": [
           "point_cloud_episodes_project",
-          "point_clouds_project"
+          "point_cloud_project"
         ],
         "context_root": "Neural Networks",
         "context_category": "MMDetection3D"
