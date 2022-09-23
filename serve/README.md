@@ -1,6 +1,6 @@
 
 <div align="center" markdown>
-<img src="https://user-images.githubusercontent.com/48913536/171728197-7a3e3d13-904c-4b0d-89ae-864ce318bba1.png"/>  
+<img src="https://user-images.githubusercontent.com/48245050/182628092-dbe94ed9-a977-473b-9375-ea649204b021.png"/>  
 
 # Serve MMDetection3D
 
@@ -16,9 +16,8 @@
 [![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/mmdetection_3d/serve)
 [![](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://supervise.ly/slack)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/supervisely-ecosystem/mmdetection_3d)
-[![views](https://app.supervise.ly/public/api/v3/ecosystem.counters?repo=supervisely-ecosystem/mmdetection_3d/serve&counter=views&label=views)](https://supervise.ly)
-[![used by teams](https://app.supervise.ly/public/api/v3/ecosystem.counters?repo=supervisely-ecosystem/mmdetection_3d/serve&counter=downloads&label=used%20by%20teams)](https://supervise.ly)
-[![runs](https://app.supervise.ly/public/api/v3/ecosystem.counters?repo=supervisely-ecosystem/mmdetection_3d/serve&counter=runs&label=runs&123)](https://supervise.ly)
+[![views](https://app.supervise.ly/img/badges/views/supervisely-ecosystem/mmdetection_3d/serve.png)](https://supervise.ly)
+[![runs](https://app.supervise.ly/img/badges/runs/supervisely-ecosystem/mmdetection_3d/serve.png)](https://supervise.ly)
 
 </div>
 

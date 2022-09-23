@@ -5,7 +5,7 @@ from supervisely.app.v1.app_service import AppService
 import pathlib
 import sys
 import json
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 # import pkg_resources
 # import zipfile
 
@@ -14,10 +14,10 @@ sly.logger.info(f"Root source directory: {root_source_path}")
 sys.path.append(root_source_path)
 
 # @TODO: for debug
-debug_env_path = os.path.join(root_source_path, "serve", "debug.env")
-secret_debug_env_path = os.path.join(root_source_path, "serve", "secret_debug.env")
-load_dotenv(debug_env_path)
-load_dotenv(secret_debug_env_path, override=True)  
+# debug_env_path = os.path.join(root_source_path, "serve", "debug.env")
+# secret_debug_env_path = os.path.join(root_source_path, "serve", "secret_debug.env")
+# load_dotenv(debug_env_path)
+# load_dotenv(secret_debug_env_path, override=True)  
 
 my_app = AppService()
 api = my_app.public_api
