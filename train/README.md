@@ -1,7 +1,7 @@
 
 <div align="center" markdown>
 
-<img src=""/>  
+<img src="https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v2.0.0rc0/train_poster.png"/>  
 
 # Train MMDetection
 
