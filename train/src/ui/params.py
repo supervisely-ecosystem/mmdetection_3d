@@ -6,7 +6,7 @@ log_interval = 1
 def init_general(state):
     state["gpusId"] = 0
     state["randomSeed"] = 0
-    state["logConfigInterval"] = 5
+    state["logConfigInterval"] = 10
     state["epochs"] = 12
     state["valInterval"] = 1
     state["batchSizePerGPU"] = 4
@@ -46,7 +46,7 @@ def init_lr_scheduler(data, state):
     state["schedulerByEpochs"] = True
     state["warmupByEpoch"] = False
 
-    state["lr_step"] = 3
+    state["lr_step"] = 4
     state["minLREnabled"] = False
     state["minLR"] = None
     state["minLRRatio"] = None
