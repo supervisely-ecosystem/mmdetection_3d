@@ -13,17 +13,18 @@
     "gui_template": "train/src/gui.html",
     "task_location": "workspace_tasks",
     "instance_version": "6.4.59",
-    "icon": "",
+    "icon": "https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v2.0.0rc0/icon-train.png",
     "icon_cover": true,
     "isolate": true,
     "need_gpu": true,
     "context_menu": {
         "target": [
-          "point_cloud_episodes_project"
+          "point_cloud_episodes_project",
+          "point_clouds_project"
         ],
         "context_root": "Neural Networks",
         "context_category": "MMDetection3D"
       },
-    "poster": "",
+    "poster": "https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v2.0.0rc0/train_poster.png",
     "community_agent": false
   }
