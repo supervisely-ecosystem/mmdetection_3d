@@ -23,6 +23,8 @@
 
 </div>
 
+<img src="https://user-images.githubusercontent.com/97401023/191994836-101d9364-32df-4a08-93eb-78e1441d9bc8.gif"/> 
+
 # Overview
 
 Train MMDetection3D models in Supervisely.
@@ -126,7 +128,7 @@ You can try training on demo data sample. Set following settings in training das
 
 # Screenshot
 
-<img src="" width="100%" style='padding-top: 10px'>
+<img src="https://user-images.githubusercontent.com/97401023/191994951-7243a2c4-127b-4d80-9a4a-e605745a0fb3.png" width="100%" style='padding-top: 10px'>
 
 # Acknowledgment
 
