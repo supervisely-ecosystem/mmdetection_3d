@@ -68,7 +68,7 @@ Application key points:
 
 Run app [Train MMDetection3D](https://app.supervise.ly/ecosystem/apps/mmdetection_3d/train) from ecosystem or from context menu of the point cloud / point cloud episodes project with annotations (`Cuboid3D` is supported as label type for object detection 3D)
 
-<img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/mmdetection_3d/train" src="" width="350px" style='padding-bottom: 10px'/>
+<img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/mmdetection_3d/train" src="https://user-images.githubusercontent.com/97401023/192003567-4446f620-6540-4e68-a6a1-d3a9fcc85fbc.png" width="350px" style='padding-bottom: 10px'/>
 
 
 # Training on Demo Data
@@ -83,7 +83,9 @@ You can try training on demo data sample. Set following settings in training das
 - `Augmentations`: No Augmentations
 - `Training hyperparams`: default
 
-[gif here]
+Your result should look like:
+
+<img src="https://user-images.githubusercontent.com/97401023/192006744-16463331-3079-495e-94ad-7c9b385721af.gif"/> 
 
 
 # Related Apps
