@@ -94,7 +94,7 @@ def get_ann_in_framework_format(state, item, sample_idx, pcd_np, pcd_sboxes, sly
             dim = fig.geometry.dimensions
             box_info.extend([dim.x, dim.y, dim.z])
             box_info.extend([fig.geometry.rotation.z])
-            box_info.extend([0, 0]) # TODO: add vel
+            # box_info.extend([0, 0]) # TODO: add vel
 
             ptc_info['annos']['gt_names'].append(fig.video_object.obj_class.name)
             ptc_info['annos']['gt_bboxes_3d'].append(box_info)

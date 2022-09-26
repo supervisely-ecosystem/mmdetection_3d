@@ -260,9 +260,11 @@ def init_model(cfg, dims):
         cfg.model.pts_bbox_head.bbox_coder.post_center_range = pcr
         cfg.model.pts_bbox_head.bbox_coder.pc_range = pcr
         cfg.model.pts_bbox_head.bbox_coder.voxel_size = cfg.voxel_size[:2]
-        # cfg.model.pts_bbox_head.bbox_coder.code_size = 7
+        cfg.model.pts_bbox_head.bbox_coder.code_size = 7
+        if hasattr(cfg.model.pts_bbox_head.common_heads, "vel"):
+            delattr(cfg.model.pts_bbox_head.common_heads, "vel")
         # TODO: maybe allow to customize by user?
-        cfg.model.train_cfg.pts.code_weights = [1., 1., 1., 1., 1., 1., 1., 1., 0.1, 0.1] 
+        cfg.model.train_cfg.pts.code_weights = [1., 1., 1., 1., 1., 1., 1., 1.] 
         cfg.model.train_cfg.pts.point_cloud_range = pcr
         cfg.model.train_cfg.pts.voxel_size = cfg.voxel_size
         cfg.model.test_cfg.pts.post_center_limit_range = pcr

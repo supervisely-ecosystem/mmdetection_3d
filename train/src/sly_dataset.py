@@ -16,7 +16,7 @@ def eval_det_cls(pred, gt, iou_thr=None):
     for img_id in gt.keys():
         cur_gt_num = len(gt[img_id])
         if cur_gt_num != 0:
-            gt_cur = torch.zeros([cur_gt_num, 9], dtype=torch.float32)
+            gt_cur = torch.zeros([cur_gt_num, 7], dtype=torch.float32)
             for i in range(cur_gt_num):
                 gt_cur[i] = gt[img_id][i].tensor
             bbox = gt[img_id][0].new_box(gt_cur)
@@ -34,7 +34,7 @@ def eval_det_cls(pred, gt, iou_thr=None):
         cur_num = len(pred[img_id])
         if cur_num == 0:
             continue
-        pred_cur = torch.zeros((cur_num, 9), dtype=torch.float32)
+        pred_cur = torch.zeros((cur_num, 7), dtype=torch.float32)
         box_idx = 0
         for box, score in pred[img_id]:
             image_ids.append(img_id)
@@ -264,7 +264,7 @@ class SuperviselyDataset(Custom3DDataset):
             gt_bboxes_3d = ori_box_type_3d(
                 np.array([], dtype=np.float32), 
                 origin=(0.5, 0.5, 0.5),
-                box_dim=9
+                box_dim=7
             ).convert_to(self.box_mode_3d)
 
         anns_results = dict(
