@@ -23,7 +23,7 @@
 
 </div>
 
-<img src="https://user-images.githubusercontent.com/97401023/191994836-101d9364-32df-4a08-93eb-78e1441d9bc8.gif"/> 
+<img src="https://user-images.githubusercontent.com/97401023/192216787-2bf0a2b3-e6a6-4c33-8b82-697e24659efa.gif"/> 
 
 # Overview
 
@@ -75,17 +75,17 @@ Run app [Train MMDetection3D](https://app.supervise.ly/ecosystem/apps/mmdetectio
 
 You can try training on demo data sample. Set following settings in training dashboard:
 
-- `data`: [Demo Lyft 3D dataset annotated](https://app.supervise.ly/ecosystem/projects/demo-lyft-3d-dataset-annotated)
+- `Project`: [Demo Lyft 3D dataset annotated](https://app.supervise.ly/ecosystem/projects/demo-lyft-3d-dataset-annotated)
 - `Model`: centerpoint_0075voxel_second_secfpn_dcn_circlenms_4x8_cyclic_20e_nus
-- `Classes`: Car
-- `Train / val splits`: 100 / 25
-- `Data preparation`: sliding window (x: 108, y: 108, z: 15)
+- `Classes`: [Car]
+- `Train/Val splits`: 100 / 25
+- `Data Preparation`: Sliding window mode (`X`: 108, `Y`: 108, `Z`: 15)
 - `Augmentations`: No Augmentations
 - `Training hyperparams`: default
 
 Your result should look like:
 
-<img src="https://user-images.githubusercontent.com/97401023/192006744-16463331-3079-495e-94ad-7c9b385721af.gif"/> 
+<img src="https://user-images.githubusercontent.com/97401023/192218062-294ccdf0-efcc-426e-b6fc-fc2f678f75fe.gif"/> 
 
 
 # Related Apps
