@@ -25,6 +25,6 @@
         "context_root": "Neural Networks",
         "context_category": "MMDetection3D"
       },
-    "poster": "https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v2.0.0rc0/train_poster.png",
+    "poster": "https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v2.0.0rc1/poster.png",
     "community_agent": false
   }
