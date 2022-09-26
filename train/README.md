@@ -42,12 +42,12 @@ Application key points:
 
 **Supported MMDetection3D models [(model zoo)](https://github.com/open-mmlab/mmdetection3d/blob/master/docs/en/model_zoo.md):**
 
-<div align="center">
+<div>
   <b>Architectures</b>
 </div>
-<table align="center">
+<table>
   <tbody>
-    <tr align="center" valign="bottom">
+    <tr valign="bottom">
       <td>
         <b>Outdoor 3D Detection (lidar data only)</b>
       </td>
