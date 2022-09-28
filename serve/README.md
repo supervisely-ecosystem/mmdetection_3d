@@ -6,7 +6,6 @@
 
 <p align="center">
   <a href="#Overview">Overview</a> •
-  <a href="#How-To-Run">How To Run</a> •
   <a href="#How-To-Use">How To Use</a> •
   <a href="#Related-Apps">Related Apps</a> •
   <a href="#Demo">Demo</a> •
@@ -31,20 +30,6 @@ Application key points:
 - Deployed on GPU (NVidia RTX devices support coming soon)
 - Models are available only for outdoor and indoor 3d object detection. Other scenarious coming soon (monocular 3D Object Detection, multi-modal 3D Object Detection, 3D Semantic Segmentation)
 
-
-# How to Run
-
-**Step 1.** Add [Serve MMDetection3D](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/mmdetection_3d/serve) to your team
-
-<img data-key="sly-module-link" data-module-slug="supervisely-ecosystem/mmdetection_3d/serve" src="https://user-images.githubusercontent.com/48913536/171728074-050e43a0-f890-46bb-8f0c-49d11ab6d7c3.png" width="350px" style='padding-bottom: 10px'/>
-
-**Step 2.** Run the application from Plugins & Apps page
-
-<img src="https://user-images.githubusercontent.com/48913536/171728069-8402f8d0-6dff-4ca8-b514-4b7fbc31b9f0.png" width="80%" style='padding-top: 10px'>  
-
-**Step 3.** Press the Run button in the modal window
-
-<img src="https://user-images.githubusercontent.com/48913536/171728060-0cb3c955-5fec-4038-95d3-1085d69457a5.png" width="50%" style='padding-top: 10px'>  
 
 # How to Use
 
