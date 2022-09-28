@@ -37,7 +37,7 @@ Application key points:
 
 **Step 1.** Select architecture and pretrained model
 
-**Step 2.** Press the **Serve** button
+**Step 2.** Press the `Serve` button
 
 <img src="https://user-images.githubusercontent.com/48913536/171728083-bda7c593-641a-4feb-ace7-4f889cfeedbf.png" width="80%"> 
 
