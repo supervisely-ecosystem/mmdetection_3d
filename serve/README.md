@@ -66,15 +66,15 @@ Model and directory structure must be acquired via [Train MMDetection](https://a
 
 **Step 1.** Open `checkpoints/data` directory in Team Files
 
-<img src="https://user-images.githubusercontent.com/97401023/192815622-9d87b91f-e9a6-4419-93c1-d29f97c438d3.png"/>  
+<img src="https://user-images.githubusercontent.com/97401023/192815622-9d87b91f-e9a6-4419-93c1-d29f97c438d3.png" width="80%" style='padding-top: 10px'/>  
 
 **Step 2.** Select checkpoint to serve and click right button to open context menu. Select `Copy path`.
 
-<img src="https://user-images.githubusercontent.com/97401023/192815866-8e8683cc-394e-4bd2-aea7-64a5ddf09dae.png"/>  
+<img src="https://user-images.githubusercontent.com/97401023/192815866-8e8683cc-394e-4bd2-aea7-64a5ddf09dae.png" width="80%" style='padding-top: 10px'/>  
 
-**Step 3.** Open `Serve MMDetection3D` app and open `Custom weights` tab. Paste checkpoint path to opened text field and press `Serve` button. Your model is ready to use!
+**Step 3.** Open [Serve MMDetection3D](https://app.supervise.ly/ecosystem/apps/mmdetection_3d/serve) app and open `Custom weights` tab. Paste checkpoint path to opened text field and press `Serve` button. Your model is ready to use!
 
-<img src="https://user-images.githubusercontent.com/97401023/192815991-e0f70ae7-701e-40ec-9493-f1da57ae443a.png"/>  
+<img src="https://user-images.githubusercontent.com/97401023/192815991-e0f70ae7-701e-40ec-9493-f1da57ae443a.png" width="80%" style='padding-top: 10px'/>  
 
 # Related Apps
 
