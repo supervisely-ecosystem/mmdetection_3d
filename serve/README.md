@@ -44,7 +44,7 @@ Application key points:
 
 **Step 3.** Press the Run button in the modal window
 
-<img src="https://user-images.githubusercontent.com/48913536/171728060-0cb3c955-5fec-4038-95d3-1085d69457a5.png" style='padding-top: 10px'>  
+<img src="https://user-images.githubusercontent.com/48913536/171728060-0cb3c955-5fec-4038-95d3-1085d69457a5.png" width="50%" style='padding-top: 10px'>  
 
 # How to Use
 
