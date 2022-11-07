@@ -258,7 +258,12 @@ def get_per_box_predictions(result, score_thr, selected_classes, cfg, center_vec
         if cfg.dataset_type != "SuperviselyDataset":
             det["size"] = [det["size"][1], det["size"][0], det["size"][2]]
         det["translation"] = pred_bboxes[i,:3].tolist()
-        det["translation"][2] += det["size"][2] * 0.5
+        # TODO: check these conditions in the future
+        if cfg.dataset_type != "SuperviselyDataset":
+            det["translation"][2] += det["size"][2] * 0.5
+        if g.model_name == "CenterPoint":
+            det["translation"][2] += det["size"][2] * 0.5
+            
         for k in range(3):
             det["translation"][k] += center_vec[k]
         # skip boxes out of pointcloud range
