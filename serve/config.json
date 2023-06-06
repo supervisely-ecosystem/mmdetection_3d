@@ -20,5 +20,8 @@
     "deployed_nn_3d"
   ],
   "poster": "https://user-images.githubusercontent.com/48245050/182628092-dbe94ed9-a977-473b-9375-ea649204b021.png",
-  "community_agent": false
+  "community_agent": false,
+  "license": {
+    "type": "Apache-2.0" 
+  }
 }
