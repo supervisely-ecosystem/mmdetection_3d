@@ -48,7 +48,7 @@ def restart(api: sly.Api, task_id, context, state, app_logger):
         if restart_from_step == 4:
             splits.restart(data, state)
         else:
-            splits.init(g.project_info, g.project_meta, data, state)
+            splits.init(g.project_info, data, state)
     
     if restart_from_step <= 5:
         if restart_from_step == 5:
