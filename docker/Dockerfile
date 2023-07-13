@@ -1,4 +1,4 @@
-FROM supervisely/base-py-sdk:6.72.70
+FROM supervisely/base-py-sdk:6.72.66
 
 RUN pip3 install -U torch==1.11.0+cu113 torchvision==0.12.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html
 RUN pip3 install mmcv-full==1.6.1 -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11.0/index.html -U
