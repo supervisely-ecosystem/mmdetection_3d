@@ -16,7 +16,7 @@
     "icon": "https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v2.0.0rc0/icon-train.png",
     "icon_cover": true,
     "isolate": true,
-    "need_gpu": true,
+    "need_gpu": false,
     "gpu": "preferred",
     "context_menu": {
         "target": [
