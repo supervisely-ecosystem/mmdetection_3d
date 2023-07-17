@@ -17,6 +17,7 @@
     "icon_cover": true,
     "isolate": true,
     "need_gpu": true,
+    "gpu": "required",
     "context_menu": {
         "target": [
           "point_cloud_episodes_project",
