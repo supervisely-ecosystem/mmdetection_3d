@@ -1,45 +1,67 @@
-<sly-card title="Training classes"
-          subtitle="Select classes, that should be used for training. Training supports only classes of shape Cuboid3D."
-          :options="{collapsable: true}"
-          :collapsed.sync="state.collapsedClasses"
-          :disabled="{disabled: state.disabledClasses, message: 'Finish all previous steps before selecting classes.'}"
-          ref="step3"
+<sly-card
+  title="Training classes"
+  subtitle="Select classes, that should be used for training. Training supports only classes of shape Cuboid3D."
+  :options="{collapsable: true}"
+  :collapsed.sync="state.collapsedClasses"
+  :disabled="{disabled: state.disabledClasses, message: 'Finish all previous steps before selecting classes.'}"
+  ref="step3"
 >
+  <sly-el-table-selection-container
+    :data="data.classes"
+    :selected="state.selectedClasses"
+    identity-field="title"
+  >
     <el-table
-            class="ultra-table"
-            :data="data.classes"
-            style="width: 100%"
-            max-height="500"
-            :disabled="data.doneClasses"
-            @selection-change="
+      ref="sly-el-table-with-selection"
+      class="ultra-table"
+      :data="data.classes"
+      style="width: 100%"
+      max-height="500"
+      :disabled="data.doneClasses"
+      @selection-change="
                 (val) => {
                     state.selectedClasses = val.map(x => x.title);
                 }
                 "
     >
-        <el-table-column type="selection" width="55"></el-table-column>
-        <el-table-column label="Name" prop="title" sortable>
-            <template scope="scope">
-                <i class="zmdi zmdi-circle mr5" :style="{color: scope.row.color}"></i>
-                {{ scope.row.title }}
-            </template>
-        </el-table-column>
-        <el-table-column prop="shape" label="Shape" sortable width="180"></el-table-column>
+      <el-table-column type="selection" width="55"></el-table-column>
+      <el-table-column label="Name" prop="title" sortable>
+        <template scope="scope">
+          <i class="zmdi zmdi-circle mr5" :style="{color: scope.row.color}"></i>
+          {{ scope.row.title }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        prop="shape"
+        label="Shape"
+        sortable
+        width="180"
+      ></el-table-column>
     </el-table>
+  </sly-el-table-selection-container>
 
-    <el-button type="primary" class="regular mt10"
-               @click="command('use_classes')"
-               :disabled="state.selectedClasses.length < 1"
-               v-if="!data.doneClasses">
-        Use {{state.selectedClasses.length}} selected classes
-    </el-button>
-    <div v-if="data.doneClasses">
-        <i class="zmdi zmdi-check-circle ml5 mr5 mt10" style="color: #13ce66"></i>
-        <span style="color: #5a6772;">Selected {{state.selectedClasses.length}} classes.</span>
-    </div>
-    <el-button type="warning" class="regular mt10" :plain="true"
-               @click="state.restartFrom = 3;"
-               v-if="data.doneClasses && state.selectedClasses.length > 0 && !state.started">
-        <i class="zmdi zmdi-rotate-left mr5"></i> Select other classes
-    </el-button>
+  <el-button
+    type="primary"
+    class="regular mt10"
+    @click="command('use_classes')"
+    :disabled="state.selectedClasses.length < 1"
+    v-if="!data.doneClasses"
+  >
+    Use {{state.selectedClasses.length}} selected classes
+  </el-button>
+  <div v-if="data.doneClasses">
+    <i class="zmdi zmdi-check-circle ml5 mr5 mt10" style="color: #13ce66"></i>
+    <span style="color: #5a6772"
+      >Selected {{state.selectedClasses.length}} classes.</span
+    >
+  </div>
+  <el-button
+    type="warning"
+    class="regular mt10"
+    :plain="true"
+    @click="state.restartFrom = 3;"
+    v-if="data.doneClasses && state.selectedClasses.length > 0 && !state.started"
+  >
+    <i class="zmdi zmdi-rotate-left mr5"></i> Select other classes
+  </el-button>
 </sly-card>
