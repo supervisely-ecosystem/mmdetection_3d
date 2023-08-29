@@ -68,9 +68,17 @@ def get_train_val_splits_by_count(train_count, val_count):
     all_items = []
     for dataset in g.project_fs.datasets:
         for item_name in dataset:
-            all_items.append(ItemInfo(dataset_name=dataset.name,
-                                name=item_name,
-                                img_path=dataset.get_img_path(item_name)))
+            try:
+                img_path = dataset.get_img_path(item_name)
+            except NotImplementedError:
+                img_path = dataset.gget_pointcloud_path(item_name)
+            all_items.append(
+                ItemInfo(
+                    dataset_name=dataset.name,
+                    name=item_name,
+                    img_path=img_path,
+                )
+            )
     random.shuffle(all_items)
     train_items = all_items[:train_count]
     val_items = all_items[train_count:]
