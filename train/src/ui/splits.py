@@ -84,7 +84,7 @@ def get_train_val_splits_by_dataset(train_datasets, val_datasets):
             if dataset is None:
                 raise KeyError(f"Dataset '{dataset_name}' not found")
             for item_name in dataset:
-                img_path, _ = dataset.get_item_paths(item_name)
+                img_path, *_ = dataset.get_item_paths(item_name)
                 info = ItemInfo(dataset.name, item_name, img_path)
                 items_list.append(info)
 
