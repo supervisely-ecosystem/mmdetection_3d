@@ -71,7 +71,7 @@ def get_train_val_splits_by_count(train_count, val_count):
             try:
                 img_path = dataset.get_img_path(item_name)
             except NotImplementedError:
-                img_path = dataset.gget_pointcloud_path(item_name)
+                img_path = dataset.get_pointcloud_path(item_name)
             all_items.append(
                 ItemInfo(
                     dataset_name=dataset.name,
