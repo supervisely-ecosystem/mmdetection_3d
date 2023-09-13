@@ -4,3 +4,5 @@ data
 *secret_debug.env
 *__pycache__
 *.pyc
+.venv
+supervisely

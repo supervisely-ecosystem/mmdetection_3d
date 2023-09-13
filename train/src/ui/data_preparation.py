@@ -76,7 +76,7 @@ def get_ann_in_framework_format(state, item, sample_idx, pcd_np, pcd_sboxes, sly
         pcd_slide.astype(np.float32).tofile(osp.join(g.project_dir, bin_filename))
         ptc_info['lidar_points']['lidar_path'] = bin_filename
         for fig in sly_ann.figures:
-            if fig.video_object.obj_class.name not in state["selectedClasses"]:
+            if fig.parent_object.obj_class.name not in state["selectedClasses"]:
                 continue
             box_info = [] # x, y, z, dx, dy, dz, rot, [vel_x, vel_y]
             pos = fig.geometry.position
@@ -96,9 +96,9 @@ def get_ann_in_framework_format(state, item, sample_idx, pcd_np, pcd_sboxes, sly
             box_info.extend([fig.geometry.rotation.z])
             # box_info.extend([0, 0]) # TODO: add vel
 
-            ptc_info['annos']['gt_names'].append(fig.video_object.obj_class.name)
+            ptc_info['annos']['gt_names'].append(fig.parent_object.obj_class.name)
             ptc_info['annos']['gt_bboxes_3d'].append(box_info)
-            ptc_info['annos']['gt_labels_3d'].append(state["selectedClasses"].index(fig.video_object.obj_class.name))
+            ptc_info['annos']['gt_labels_3d'].append(state["selectedClasses"].index(fig.parent_object.obj_class.name))
         ptc_info['annos']['gt_bboxes_3d'] = np.array(ptc_info['annos']['gt_bboxes_3d'], dtype=np.float32)
         ptc_info['annos']['gt_labels_3d'] = np.array(ptc_info['annos']['gt_labels_3d'], dtype=np.int32)
         annotations.append(ptc_info)
