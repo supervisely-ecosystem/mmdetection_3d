@@ -9,6 +9,7 @@
   <a href="#Overview">Overview</a> •
   <a href="#How-To-Run">How To Run</a> •
   <a href="#Training-on-Demo-Data">Training on Demo Data</a> •
+  <a href="#How-To-Use-Your-Trained-Model-Outside-Supervisely">How To Use Your Trained Model Outside Supervisely</a> •
   <a href="#Related-Apps">Related Apps</a> •
   <a href="#Related-Projects">Related Projects</a> •
   <a href="#Screenshot">Screenshot</a> •
@@ -86,6 +87,11 @@ You can try training on demo data sample. Set following settings in training das
 Your result should look like:
 
 <img src="https://user-images.githubusercontent.com/97401023/192218062-294ccdf0-efcc-426e-b6fc-fc2f678f75fe.gif"/> 
+
+
+# How To Use Your Trained Model Outside Supervisely
+
+You can use your trained models outside Supervisely platform without any dependencies on Supervisely SDK. See this [Jupyter Notebook](https://github.com/supervisely-ecosystem/mmdetection_3d/blob/master/outside_supervisely/inference_outside_supervisely.ipynb) for details.
 
 
 # Related Apps
