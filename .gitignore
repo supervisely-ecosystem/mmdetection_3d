@@ -6,3 +6,4 @@ data
 *.pyc
 .venv
 supervisely
+/my_model
