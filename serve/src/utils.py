@@ -186,11 +186,12 @@ def init_model_and_cfg(state):
     g.meta = sly.ProjectMeta(obj_classes=obj_classes)
     dims = 4
     
-    if state["weightsInitialization"] == "pretrained" and state["expandPCR"]:
-        expand_point_cloud_range(cfg)
+    if hasattr(cfg, "point_cloud_range"):
+        if state["weightsInitialization"] == "pretrained" and state["expandPCR"]:
+            expand_point_cloud_range(cfg)
 
-    g.ptc_range_centered = is_pcr_centered(cfg.point_cloud_range, eps=1e-5)
-    
+        g.ptc_range_centered = is_pcr_centered(cfg.point_cloud_range, eps=1e-5)
+        
     if hasattr(cfg, "center_coords"):
         g.train_data_centered = cfg.center_coords
 
