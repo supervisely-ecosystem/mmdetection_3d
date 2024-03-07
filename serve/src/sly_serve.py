@@ -97,10 +97,12 @@ def get_session_info(api: sly.Api, task_id, context, state, app_logger):
         "model_name": g.model_name,
         "device": g.device,
         "session_id": task_id,
-        "classes_count": len(g.meta.obj_classes),
-        "ptc_range_centered": g.ptc_range_centered,
-        "train_data_centered" : g.train_data_centered
+        "classes_count": len(g.meta.obj_classes)
     }
+    if g.ptc_range_centered is not None:
+        info["ptc_range_centered"] = g.ptc_range_centered
+    if g.train_data_centered is not None:
+        info["train_data_centered"] = g.train_data_centered
     request_id = context["request_id"]
     g.my_app.send_response(request_id, data=info)
 
