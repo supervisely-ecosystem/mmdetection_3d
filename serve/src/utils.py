@@ -402,8 +402,8 @@ def inference_model(model, local_pointcloud_path, thresh=0.3, selected_classes=N
                     pcd_np[:,i] -= dim_trans
                     center_vec[i] = dim_trans
 
-        intensity = np.zeros((pcd_np.shape[0], 1), dtype=np.float32)
-        pcd_np = np.hstack((pcd_np, intensity))
+        # intensity = np.zeros((pcd_np.shape[0], 1), dtype=np.float32)
+        # pcd_np = np.hstack((pcd_np, intensity))
         pcd_np.astype(np.float32).tofile(local_pointcloud_path)
 
         result, _ = inference_detector(model, local_pointcloud_path)
