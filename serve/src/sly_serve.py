@@ -25,7 +25,7 @@ def send_error_data(func):
             value = func(*args, **kwargs)
         except Exception as e:
             request_id = kwargs["context"]["request_id"]
-            sly.logger.warning(e)
+            sly.logger.warning(repr(e), exc_info=True)
             g.my_app.send_response(request_id, data={"error": repr(e)})
             g.my_app.stop()
         return value
