@@ -233,7 +233,7 @@ def rotate(source_angle, delta):
         result = np.pi + (result + np.pi)
     return result
 
-def get_per_box_predictions(result, score_thr, selected_classes, cfg, center_vec, input_slide_range):
+def get_per_box_predictions(result, score_thr, selected_classes, cfg, center_vec, input_slide_range=None):
     if 'pts_bbox' in result[0].keys():
         preds = result[0]['pts_bbox']
     else:
@@ -267,14 +267,15 @@ def get_per_box_predictions(result, score_thr, selected_classes, cfg, center_vec
             
         for k in range(3):
             det["translation"][k] += center_vec[k]
-        # skip boxes out of pointcloud range
-        if det["translation"][0] < input_slide_range[0] or \
-            det["translation"][0] > input_slide_range[3] or \
-            det["translation"][1] < input_slide_range[1] or \
-            det["translation"][1] > input_slide_range[4] or \
-            det["translation"][2] < input_slide_range[2] or \
-            det["translation"][2] > input_slide_range[5]:
-            continue
+        if input_slide_range is not None:
+            # skip boxes out of pointcloud range
+            if det["translation"][0] < input_slide_range[0] or \
+                det["translation"][0] > input_slide_range[3] or \
+                det["translation"][1] < input_slide_range[1] or \
+                det["translation"][1] > input_slide_range[4] or \
+                det["translation"][2] < input_slide_range[2] or \
+                det["translation"][2] > input_slide_range[5]:
+                continue
         det["rotation"] = pred_bboxes[i,6].item()
         if cfg.dataset_type != "SuperviselyDataset":
             det["rotation"] = rotate(det["rotation"], -np.pi * 0.5)
@@ -328,66 +329,84 @@ def inference_model(model, local_pointcloud_path, thresh=0.3, selected_classes=N
     pcd = o3d.io.read_point_cloud(local_pointcloud_path)
     pcd_np = np.asarray(pcd.points)
     # check ptc ranges
-    pcr = model.cfg.point_cloud_range
-    pcr_dim = [pcr[3] - pcr[0], pcr[4] - pcr[1], pcr[5] - pcr[2]]
-    input_ptc_dim = [
-        pcd_np[:,0].max() - pcd_np[:,0].min(),
-        pcd_np[:,1].max() - pcd_np[:,1].min(),
-        pcd_np[:,2].max() - pcd_np[:,2].min()
-    ]
-
-    sboxes = get_slide_boxes(input_ptc_dim, pcr_dim, apply_sw)
-    
-    pcd_sboxes = []
-    for sbox in sboxes:
-        pcd_sbox = []
-        for i in range(3):
-            if center_ptc is None or center_ptc[i]:
-                pcd_sbox.extend([
-                    pcd_np[:,i].min() + sbox[i*2],
-                    pcd_np[:,i].min() + sbox[i*2+1]
-                ])
-            else:
-                pcd_sbox.extend([
-                    pcr[i],
-                    pcr[i+3]
-                ])
-        pcd_sboxes.append(pcd_sbox)
-
-    results = []
-    # TODO: is it possible to use batch inference here?
-    for sbox in pcd_sboxes:
-        pcd_eps = 1e-3
-        pcd_slide = pcd_np[
-            (pcd_np[:,0] > sbox[0] - pcd_eps) &
-            (pcd_np[:,0] < sbox[1] + pcd_eps) &
-            (pcd_np[:,1] > sbox[2] - pcd_eps) &
-            (pcd_np[:,1] < sbox[3] + pcd_eps) &
-            (pcd_np[:,2] > sbox[4] - pcd_eps) &
-            (pcd_np[:,2] < sbox[5] + pcd_eps)
+    if hasattr(model.cfg, "point_cloud_range"):
+        pcr = model.cfg.point_cloud_range
+        pcr_dim = [pcr[3] - pcr[0], pcr[4] - pcr[1], pcr[5] - pcr[2]]
+        input_ptc_dim = [
+            pcd_np[:,0].max() - pcd_np[:,0].min(),
+            pcd_np[:,1].max() - pcd_np[:,1].min(),
+            pcd_np[:,2].max() - pcd_np[:,2].min()
         ]
-        if len(pcd_slide) == 0:
-            continue
-        center_vec = [0, 0, 0]
-        input_slide_range = [
-            pcd_slide[:,0].min(),
-            pcd_slide[:,1].min(),
-            pcd_slide[:,2].min(),
-            pcd_slide[:,0].max(),
-            pcd_slide[:,1].max(),
-            pcd_slide[:,2].max()
-        ]
-        for i in range(3):
-            if center_ptc is None or center_ptc[i]:
-                dim_trans = input_slide_range[i] + (input_slide_range[i + 3] - input_slide_range[i]) * 0.5
-                pcd_slide[:,i] -= dim_trans
-                center_vec[i] = dim_trans
 
-        intensity = np.zeros((pcd_slide.shape[0], 1), dtype=np.float32)
-        pcd_slide = np.hstack((pcd_slide, intensity))
-        pcd_slide.astype(np.float32).tofile(local_pointcloud_path)
+        sboxes = get_slide_boxes(input_ptc_dim, pcr_dim, apply_sw)
         
+        pcd_sboxes = []
+        for sbox in sboxes:
+            pcd_sbox = []
+            for i in range(3):
+                if center_ptc is None or center_ptc[i]:
+                    pcd_sbox.extend([
+                        pcd_np[:,i].min() + sbox[i*2],
+                        pcd_np[:,i].min() + sbox[i*2+1]
+                    ])
+                else:
+                    pcd_sbox.extend([
+                        pcr[i],
+                        pcr[i+3]
+                    ])
+            pcd_sboxes.append(pcd_sbox)
+
+        results = []
+        # TODO: is it possible to use batch inference here?
+        for sbox in pcd_sboxes:
+            pcd_eps = 1e-3
+            pcd_slide = pcd_np[
+                (pcd_np[:,0] > sbox[0] - pcd_eps) &
+                (pcd_np[:,0] < sbox[1] + pcd_eps) &
+                (pcd_np[:,1] > sbox[2] - pcd_eps) &
+                (pcd_np[:,1] < sbox[3] + pcd_eps) &
+                (pcd_np[:,2] > sbox[4] - pcd_eps) &
+                (pcd_np[:,2] < sbox[5] + pcd_eps)
+            ]
+            if len(pcd_slide) == 0:
+                continue
+            center_vec = [0, 0, 0]
+            input_slide_range = [
+                pcd_slide[:,0].min(),
+                pcd_slide[:,1].min(),
+                pcd_slide[:,2].min(),
+                pcd_slide[:,0].max(),
+                pcd_slide[:,1].max(),
+                pcd_slide[:,2].max()
+            ]
+            for i in range(3):
+                if center_ptc is None or center_ptc[i]:
+                    dim_trans = input_slide_range[i] + (input_slide_range[i + 3] - input_slide_range[i]) * 0.5
+                    pcd_slide[:,i] -= dim_trans
+                    center_vec[i] = dim_trans
+
+            intensity = np.zeros((pcd_slide.shape[0], 1), dtype=np.float32)
+            pcd_slide = np.hstack((pcd_slide, intensity))
+            pcd_slide.astype(np.float32).tofile(local_pointcloud_path)
+            
+            result, _ = inference_detector(model, local_pointcloud_path)
+            result = get_per_box_predictions(result, thresh, selected_classes, model.cfg, center_vec, input_slide_range)
+            results.extend(result)
+        return results
+    else:
+        center_vec = [0, 0, 0]
+        if hasattr(model.cfg, "centerize_points"):
+            for i in range(3):
+                if model.cfg.centerize_points[i]:
+                    dim_trans = pcd_np[:,i].min() + (pcd_np[:,i].max() - pcd_np[:,i].min()) * 0.5
+                    pcd_np[:,i] -= dim_trans
+                    center_vec[i] = dim_trans
+
+        intensity = np.zeros((pcd_np.shape[0], 1), dtype=np.float32)
+        pcd_np = np.hstack((pcd_np, intensity))
+        pcd_np.astype(np.float32).tofile(local_pointcloud_path)
+
         result, _ = inference_detector(model, local_pointcloud_path)
-        result = get_per_box_predictions(result, thresh, selected_classes, model.cfg, center_vec, input_slide_range)
-        results.extend(result)
-    return results
+        result = get_per_box_predictions(result, thresh, selected_classes, model.cfg, center_vec)
+
+        return result
