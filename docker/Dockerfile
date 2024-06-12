@@ -10,6 +10,7 @@ RUN pip3 install mmsegmentation==0.27.0
 RUN pip3 install pyyaml==6.0
 RUN pip3 install open3d==0.13.0
 RUN pip3 install spconv-cu113
+RUN pip3 install setuptools==69.5.1
 
 COPY dev_requirements.txt dev_requirements.txt
 RUN pip3 install -r dev_requirements.txt
