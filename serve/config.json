@@ -8,7 +8,7 @@
     "serve"
   ],
   "description": "Deploy model as REST API service",
-  "docker_image": "supervisely/mmdet3d:1.0.5",
+  "docker_image": "supervisely/mmdet3d:1.0.6",
   "main_script": "serve/src/sly_serve.py",
   "gui_template": "serve/src/gui.html",
   "task_location": "application_sessions",
