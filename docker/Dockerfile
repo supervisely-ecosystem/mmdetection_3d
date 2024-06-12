@@ -16,3 +16,4 @@ RUN pip3 install -r dev_requirements.txt
 
 RUN pip3 install setuptools==69.5.1
 RUN pip3 install numpy==1.23.1
+RUN pip3 install yapf==0.40.1
