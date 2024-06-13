@@ -148,17 +148,11 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         sly.json.dump_json_file(state, os.path.join(g.info_dir, "ui_state.json"))
         
         cfg = init_cfg(state)
-        print(cfg.pretty_text) # TODO: for debug
-        print(cfg)
-        print(cfg['min_radius'])
+        # print(cfg.pretty_text) # TODO: for debug
 
         # TODO: bug: save latest even if 'latest' false
         os.makedirs(os.path.join(g.checkpoints_dir, cfg.work_dir.split('/')[-1]), exist_ok=True)
         cfg.dump(osp.join(g.checkpoints_dir, cfg.work_dir.split('/')[-1], "config.py"))
-        
-        # debug upload config
-        api.file.upload(g.team_id, os.path.join(g.checkpoints_dir, cfg.work_dir.split('/')[-1], "config.py"), f"/MMDetection3DCONFIG/{task_id}/config.py")
-        
         model = build_model(
             cfg.model,
             train_cfg=cfg.get('train_cfg'),
