@@ -44,7 +44,8 @@ project_dir = os.path.join(my_app.data_dir, "sly_project")
 project_meta = sly.ProjectMeta.from_json(api.project.get_meta(project_id))
 project_fs: sly.Project = None
 
-artifacts_dir = os.path.join(my_app.data_dir, "artifacts")
+data_dir = sly.app.get_synced_data_dir()
+artifacts_dir = os.path.join(data_dir, "artifacts")
 sly.fs.mkdir(artifacts_dir)
 info_dir = os.path.join(artifacts_dir, "info")
 sly.fs.mkdir(info_dir)
