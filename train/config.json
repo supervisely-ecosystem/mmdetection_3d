@@ -8,7 +8,7 @@
       "train"
     ],
     "description": "Dashboard to configure, start and monitor training",
-    "docker_image": "supervisely/mmdet3d:1.0.9",
+    "docker_image": "supervisely/mmdet3d:1.0.11",
     "main_script": "train/src/sly_train.py",
     "gui_template": "train/src/gui.html",
     "task_location": "workspace_tasks",
