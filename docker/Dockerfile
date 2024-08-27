@@ -14,6 +14,6 @@ RUN pip3 install spconv-cu113
 COPY dev_requirements.txt dev_requirements.txt
 RUN pip3 install -r dev_requirements.txt
 
-RUN pip3 install setuptools==69.5.1
+RUN pip3 install --upgrade setuptools==70.3.0
 RUN pip3 install numpy==1.23.1
 RUN pip3 install yapf==0.40.1
