@@ -11,9 +11,13 @@ RUN pip3 install pyyaml==6.0
 RUN pip3 install open3d==0.13.0
 RUN pip3 install spconv-cu113
 
-COPY dev_requirements.txt dev_requirements.txt
-RUN pip3 install -r dev_requirements.txt
+# COPY dev_requirements.txt dev_requirements.txt
+# RUN pip3 install -r dev_requirements.txt
 
-RUN pip3 install --upgrade setuptools==70.3.0
+# Ensure both 'setuptools' and 'pkg_resources' are correctly installed and up-to-date
+RUN pip3 uninstall setuptools
+RUN pip3 install setuptools
+
 RUN pip3 install numpy==1.23.1
 RUN pip3 install yapf==0.40.1
+RUN pip3 install supervisely==6.73.169
