@@ -12,7 +12,7 @@
     "main_script": "train/src/sly_train.py",
     "gui_template": "train/src/gui.html",
     "task_location": "workspace_tasks",
-    "min_instance_version": "6.8.48",
+    "min_instance_version": "6.11.10",
     "icon": "https://github.com/supervisely-ecosystem/mmdetection_3d/releases/download/v2.0.0rc0/icon-train.png",
     "icon_cover": true,
     "isolate": true,
