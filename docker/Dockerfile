@@ -15,7 +15,7 @@ RUN pip3 install spconv-cu113
 # RUN pip3 install -r dev_requirements.txt
 
 # Ensure both 'setuptools' and 'pkg_resources' are correctly installed and up-to-date
-RUN pip3 uninstall setuptools
+RUN pip3 uninstall setuptools -y
 RUN pip3 install setuptools
 
 RUN pip3 install numpy==1.23.1
