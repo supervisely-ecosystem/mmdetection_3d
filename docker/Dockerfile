@@ -1,4 +1,4 @@
-FROM supervisely/base-py-sdk:6.72.66
+FROM supervisely/base-py-sdk:6.73.137
 
 RUN pip3 install -U torch==1.11.0+cu113 torchvision==0.12.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html
 RUN pip3 install mmcv-full==1.6.1 -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11.0/index.html -U
@@ -11,5 +11,10 @@ RUN pip3 install pyyaml==6.0
 RUN pip3 install open3d==0.13.0
 RUN pip3 install spconv-cu113
 
-COPY dev_requirements.txt dev_requirements.txt
-RUN pip3 install -r dev_requirements.txt
+# COPY dev_requirements.txt dev_requirements.txt
+# RUN pip3 install -r dev_requirements.txt
+
+RUN pip3 install --upgrade setuptools==70.3.0
+RUN pip3 install numpy==1.23.1
+RUN pip3 install yapf==0.40.1
+RUN pip3 install supervisely==6.73.169
