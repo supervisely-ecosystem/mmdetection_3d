@@ -17,4 +17,4 @@ RUN pip3 install spconv-cu113
 RUN pip3 install --upgrade setuptools==70.3.0
 RUN pip3 install numpy==1.23.1
 RUN pip3 install yapf==0.40.1
-RUN pip3 install supervisely==6.73.169
+RUN pip3 install supervisely==6.73.203

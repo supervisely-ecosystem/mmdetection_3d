@@ -14,6 +14,8 @@ import centerpoint
 import sly_dataset
 import sly_logger_hook
 
+import workflow as w
+
 _open_lnk_name = "open_app.lnk"
 
 def init(data, state):
@@ -167,6 +169,8 @@ def train(api: sly.Api, task_id, context, state, app_logger):
             distributed=False,
             validate=True)
 
+        w.workflow_input(api, g.project_info, state)
+
         fields = [
             {"field": "data.progressEpoch", "payload": None},
             {"field": "data.progressIter", "payload": None},
@@ -186,6 +190,8 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         ]
         g.api.app.set_fields(g.task_id, fields)
 
+        w.workflow_output(api, remote_dir, state)
+        
         # stop application
         g.my_app.stop()
 
