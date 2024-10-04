@@ -3,6 +3,8 @@ FROM supervisely/base-py-sdk:6.73.137
 RUN pip3 install -U torch==1.11.0+cu113 torchvision==0.12.0+cu113 -f https://download.pytorch.org/whl/torch_stable.html
 RUN pip3 install mmcv-full==1.6.1 -f https://download.openmmlab.com/mmcv/dist/cu113/torch1.11.0/index.html -U
 
+RUN git clone -b release0.53 https://github.com/numba/numba.git /tmp/numba/numba
+RUN pip3 install -e /tmp/numba/numba
 RUN git clone -b v1.0.0rc4 https://github.com/open-mmlab/mmdetection3d.git /tmp/mmdet3d/mmdetection3d
 RUN pip3 install -e /tmp/mmdet3d/mmdetection3d
 RUN pip3 install mmdet==2.25.1
