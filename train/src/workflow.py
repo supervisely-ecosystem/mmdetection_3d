@@ -1,5 +1,6 @@
 # Description: This file contains Versioning and Workflow features for the Train MMDetection3D custom model
 
+import os
 import supervisely as sly
 
 from supervisely.api.file_api import FileInfo
@@ -36,6 +37,7 @@ def workflow_input(api: sly.Api, project_info: sly.ProjectInfo, state: dict = No
 
 def workflow_output(api: sly.Api, remote_dir: str, state:dict):
     try:
+        remote_dir = os.path.join(remote_dir, "checkpoints", "data")
         file_infos_list = api.file.list(sly.env.team_id(), remote_dir, recursive=False, return_type="fileinfo")
         all_checkpoints = []
         best_checkpoints = []
