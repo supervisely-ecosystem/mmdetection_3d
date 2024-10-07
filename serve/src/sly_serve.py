@@ -15,7 +15,7 @@ from collections import OrderedDict
 
 import parta2
 import centerpoint
-
+import workflow as w
 
 def send_error_data(func):
     @functools.wraps(func)
@@ -242,6 +242,8 @@ def init_model(api: sly.Api, task_id, context, state, app_logger):
     ]
     g.api.app.set_fields(g.task_id, fields)
     sly.logger.info("Model has been successfully deployed.")
+    if state["weightsInitialization"] == "custom":
+             w.workflow_input(api, g.remote_weights_path)
 
 
 def main():
