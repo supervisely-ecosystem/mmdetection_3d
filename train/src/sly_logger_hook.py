@@ -6,7 +6,6 @@ from sly_train_progress import add_progress_to_request
 import sly_globals as g
 import classes as cls
 import params
-from pprint import pprint
 import math
 
 def validate_dict(log_dict):
@@ -60,7 +59,7 @@ class SuperviselyLoggerHook(TextLoggerHook):
         if is_valid is False:
             print("Incorrect values found, breaking early. "
                   "This may be due to invalid input data, or application error. "
-                  "In case of latter, please, contact technical support")
+                  "In case of latter, please, contact technical support.")
             return
         if log_dict['mode'] == 'train':
             epoch_float = float(self.progress_epoch.current - 1) + float(self.progress_iter.current) / float(self.progress_iter.total)
