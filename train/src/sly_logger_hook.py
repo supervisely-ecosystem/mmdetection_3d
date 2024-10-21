@@ -6,7 +6,7 @@ from sly_train_progress import add_progress_to_request
 import sly_globals as g
 import classes as cls
 import params
-
+from pprint import pprint
 import math
 
 def check_number(value):
@@ -53,6 +53,9 @@ class SuperviselyLoggerHook(TextLoggerHook):
 
         add_progress_to_request(fields, "Epoch", self.progress_epoch)
         add_progress_to_request(fields, "Iter", self.progress_iter)
+
+        print("LOG DICT:")
+        pprint(f"{log_dict}")
         try:
             if log_dict['mode'] == 'train':
                 epoch_float = check_number(float(self.progress_epoch.current - 1) + float(self.progress_iter.current) / float(self.progress_iter.total))
@@ -80,8 +83,6 @@ class SuperviselyLoggerHook(TextLoggerHook):
                     {"field": f"state.chartMAP_5.series[0].data", "payload": [[log_dict["epoch"], log_dict["mAP_0.50"]]], "append": True},
                     {"field": f"state.chartMAR_5.series[0].data", "payload": [[log_dict["epoch"], log_dict["mAR_0.50"]]], "append": True},
                 ])
-            print('Setting fields: '
-                  '{}'.format(fields))
             g.api.app.set_fields(g.task_id, fields)
         except Exception as e:
             print("Unable to write metrics to chart!")
