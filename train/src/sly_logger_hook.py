@@ -6,6 +6,15 @@ from sly_train_progress import add_progress_to_request
 import sly_globals as g
 import classes as cls
 import params
+import math
+
+def validate_dict(log_dict):
+    for k, v in log_dict.items():
+        if k.endswith("50") or k.endswith("25"):
+            if not (isinstance(v, (int, float)) and math.isfinite(v)):
+                return False
+    return True
+
 
 @HOOKS.register_module()
 class SuperviselyLoggerHook(TextLoggerHook):
@@ -45,7 +54,13 @@ class SuperviselyLoggerHook(TextLoggerHook):
 
         add_progress_to_request(fields, "Epoch", self.progress_epoch)
         add_progress_to_request(fields, "Iter", self.progress_iter)
-        
+
+        is_valid = validate_dict(log_dict)
+        if is_valid is False:
+            print("Incorrect values found, breaking early. "
+                  "This may be due to invalid input data, or application error. "
+                  "In case of latter, please, contact technical support.")
+            return
         if log_dict['mode'] == 'train':
             epoch_float = float(self.progress_epoch.current - 1) + float(self.progress_iter.current) / float(self.progress_iter.total)
             if self.progress_iter.total // params.log_interval == self.progress_iter.current // params.log_interval:
@@ -75,5 +90,5 @@ class SuperviselyLoggerHook(TextLoggerHook):
         try:
             g.api.app.set_fields(g.task_id, fields)
         except Exception as e:
-            print("Unabled to write metrics to chart!")
+            print("Unable to write metrics to chart!")
             print(e)
