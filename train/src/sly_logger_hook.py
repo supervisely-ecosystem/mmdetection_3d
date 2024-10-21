@@ -7,6 +7,14 @@ import sly_globals as g
 import classes as cls
 import params
 
+import math
+
+def check_number(value):
+    # returns value if value is not str, NaN, infinity or negative infinity
+    if isinstance(value, (int, float)) and math.isfinite(value):
+        return value
+    raise RuntimeError("Invalid value")
+
 @HOOKS.register_module()
 class SuperviselyLoggerHook(TextLoggerHook):
     def __init__(self,
@@ -47,7 +55,7 @@ class SuperviselyLoggerHook(TextLoggerHook):
         add_progress_to_request(fields, "Iter", self.progress_iter)
         
         if log_dict['mode'] == 'train':
-            epoch_float = float(self.progress_epoch.current - 1) + float(self.progress_iter.current) / float(self.progress_iter.total)
+            epoch_float = check_number(float(self.progress_epoch.current - 1) + float(self.progress_iter.current) / float(self.progress_iter.total))
             if self.progress_iter.total // params.log_interval == self.progress_iter.current // params.log_interval:
                 fields.append({"field": "state.isValidation", "payload": True})
             fields.extend([
@@ -73,7 +81,9 @@ class SuperviselyLoggerHook(TextLoggerHook):
                 {"field": f"state.chartMAR_5.series[0].data", "payload": [[log_dict["epoch"], log_dict["mAR_0.50"]]], "append": True},
             ])
         try:
+            print('Setting fields: '
+                  '{}'.format(fields))
             g.api.app.set_fields(g.task_id, fields)
         except Exception as e:
-            print("Unabled to write metrics to chart!")
+            print("Unable to write metrics to chart!")
             print(e)
