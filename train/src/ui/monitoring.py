@@ -151,6 +151,10 @@ def train(api: sly.Api, task_id, context, state, app_logger):
         
         cfg = init_cfg(state)
         # print(cfg.pretty_text) # TODO: for debug
+        
+        # Fix task_id IndexError: out of range for CenterPoint
+        if cfg.model.type =="CenterPointFixed":
+            cfg.model.test_cfg.pts.min_radius = [2] * len(cfg.model.pts_bbox_head.tasks)
 
         # TODO: bug: save latest even if 'latest' false
         os.makedirs(os.path.join(g.checkpoints_dir, cfg.work_dir.split('/')[-1]), exist_ok=True)

@@ -61,32 +61,36 @@ class SuperviselyLoggerHook(TextLoggerHook):
                   "This may be due to invalid input data, or application error. "
                   "In case of latter, please, contact technical support.")
             return
-        if log_dict['mode'] == 'train':
-            epoch_float = float(self.progress_epoch.current - 1) + float(self.progress_iter.current) / float(self.progress_iter.total)
-            if self.progress_iter.total // params.log_interval == self.progress_iter.current // params.log_interval:
-                fields.append({"field": "state.isValidation", "payload": True})
-            fields.extend([
-                {"field": "state.chartLR.series[0].data", "payload": [[epoch_float, round(log_dict["lr"], 6)]], "append": True},
-                {"field": "state.chartLoss.series[0].data", "payload": [[epoch_float, round(log_dict["loss"], 6)]], "append": True},
-                {"field": "state.chartTime.series[0].data", "payload": [[epoch_float, log_dict["time"]]], "append": True},
-                {"field": "state.chartDataTime.series[0].data", "payload": [[epoch_float, log_dict["data_time"]]], "append": True},
-                {"field": "state.chartMemory.series[0].data", "payload": [[epoch_float, log_dict["memory"]]], "append": True}
-            ])
-            
-        if log_dict['mode'] == 'val':
-            for class_ind, class_name in enumerate(cls.selected_classes):
+        try:
+            if log_dict['mode'] == 'train':
+                epoch_float = float(self.progress_epoch.current - 1) + float(self.progress_iter.current) / float(self.progress_iter.total)
+                if self.progress_iter.total // params.log_interval == self.progress_iter.current // params.log_interval:
+                    fields.append({"field": "state.isValidation", "payload": True})
                 fields.extend([
-                    {"field": f"state.chartAP_25.series[{class_ind}].data", "payload": [[log_dict["epoch"], log_dict[f"{class_name}_AP_0.25"]]], "append": True},
-                    {"field": f"state.chartAR_25.series[{class_ind}].data", "payload": [[log_dict["epoch"], log_dict[f"{class_name}_rec_0.25"]]], "append": True},
-                    {"field": f"state.chartAP_5.series[{class_ind}].data", "payload": [[log_dict["epoch"], log_dict[f"{class_name}_AP_0.50"]]], "append": True},
-                    {"field": f"state.chartAR_5.series[{class_ind}].data", "payload": [[log_dict["epoch"], log_dict[f"{class_name}_rec_0.50"]]], "append": True},
+                    {"field": "state.chartLR.series[0].data", "payload": [[epoch_float, round(log_dict["lr"], 6)]], "append": True},
+                    {"field": "state.chartLoss.series[0].data", "payload": [[epoch_float, round(log_dict["loss"], 6)]], "append": True},
+                    {"field": "state.chartTime.series[0].data", "payload": [[epoch_float, log_dict["time"]]], "append": True},
+                    {"field": "state.chartDataTime.series[0].data", "payload": [[epoch_float, log_dict["data_time"]]], "append": True},
+                    {"field": "state.chartMemory.series[0].data", "payload": [[epoch_float, log_dict["memory"]]], "append": True}
                 ])
-            fields.extend([
-                {"field": f"state.chartMAP_25.series[0].data", "payload": [[log_dict["epoch"], log_dict["mAP_0.25"]]], "append": True},
-                {"field": f"state.chartMAR_25.series[0].data", "payload": [[log_dict["epoch"], log_dict["mAR_0.25"]]], "append": True},
-                {"field": f"state.chartMAP_5.series[0].data", "payload": [[log_dict["epoch"], log_dict["mAP_0.50"]]], "append": True},
-                {"field": f"state.chartMAR_5.series[0].data", "payload": [[log_dict["epoch"], log_dict["mAR_0.50"]]], "append": True},
-            ])
+                
+            if log_dict['mode'] == 'val':
+                for class_ind, class_name in enumerate(cls.selected_classes):
+                    fields.extend([
+                        {"field": f"state.chartAP_25.series[{class_ind}].data", "payload": [[log_dict["epoch"], log_dict[f"{class_name}_AP_0.25"]]], "append": True},
+                        {"field": f"state.chartAR_25.series[{class_ind}].data", "payload": [[log_dict["epoch"], log_dict[f"{class_name}_rec_0.25"]]], "append": True},
+                        {"field": f"state.chartAP_5.series[{class_ind}].data", "payload": [[log_dict["epoch"], log_dict[f"{class_name}_AP_0.50"]]], "append": True},
+                        {"field": f"state.chartAR_5.series[{class_ind}].data", "payload": [[log_dict["epoch"], log_dict[f"{class_name}_rec_0.50"]]], "append": True},
+                    ])
+                fields.extend([
+                    {"field": f"state.chartMAP_25.series[0].data", "payload": [[log_dict["epoch"], log_dict["mAP_0.25"]]], "append": True},
+                    {"field": f"state.chartMAR_25.series[0].data", "payload": [[log_dict["epoch"], log_dict["mAR_0.25"]]], "append": True},
+                    {"field": f"state.chartMAP_5.series[0].data", "payload": [[log_dict["epoch"], log_dict["mAP_0.50"]]], "append": True},
+                    {"field": f"state.chartMAR_5.series[0].data", "payload": [[log_dict["epoch"], log_dict["mAR_0.50"]]], "append": True},
+                ])
+        except:
+            sly.logger.warn("Couldn't write logs for the current epoch")
+            
         try:
             g.api.app.set_fields(g.task_id, fields)
         except Exception as e:
