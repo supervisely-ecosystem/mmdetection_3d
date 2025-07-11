@@ -16,7 +16,7 @@
   "icon": "https://user-images.githubusercontent.com/12828725/171726755-470c663f-9c66-40b1-ab9d-b066aaf1ac2b.png",
   "icon_cover": true,
   "isolate": true,
-  "need_gpu": false,
+  "need_gpu": true,
   "gpu": "preferred",
   "session_tags": [
     "deployed_nn_3d"
