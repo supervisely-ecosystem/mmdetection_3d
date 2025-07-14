@@ -17,7 +17,7 @@
   "icon_cover": true,
   "isolate": true,
   "need_gpu": true,
-  "gpu": "preferred",
+  "gpu": "required",
   "session_tags": [
     "deployed_nn_3d"
   ],
