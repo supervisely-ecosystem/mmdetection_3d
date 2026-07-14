@@ -179,7 +179,7 @@ def init_cfg_eval(cfg, state):
 def init_cfg_checkpoint(cfg, state):
     cfg.checkpoint_config.interval = state["checkpointInterval"]
     cfg.checkpoint_config.by_epoch = True
-    cfg.checkpoint_config.max_keep_ckpts = state["maxKeepCkpts"] if state["maxKeepCkptsEnabled"] else None
+    cfg.checkpoint_config.max_keep_ckpts = state["maxKeepCkpts"] if state["maxKeepCkptsEnabled"] else -1
     cfg.checkpoint_config.out_dir = g.checkpoints_dir
 
 
